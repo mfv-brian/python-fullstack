@@ -1,7 +1,7 @@
 import uuid
 
 from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, JSON
 
 
 # Shared properties
@@ -161,3 +161,70 @@ class TenantPublic(TenantBase):
 class TenantsPublic(SQLModel):
     data: list[TenantPublic]
     count: int
+
+
+# Audit Log models
+class AuditAction(str, Enum):
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+    VIEW = "VIEW"
+    SEARCH = "SEARCH"
+
+
+class AuditSeverity(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
+# Shared properties for audit logs
+class AuditLogBase(SQLModel):
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
+    action: AuditAction
+    resource_type: str = Field(max_length=100)
+    resource_id: str = Field(max_length=255)
+    ip_address: str | None = Field(default=None, max_length=45)
+    user_agent: str | None = Field(default=None, max_length=500)
+    before_state: dict | None = Field(default=None, sa_type=JSON)
+    after_state: dict | None = Field(default=None, sa_type=JSON)
+    custom_metadata: dict | None = Field(default=None, sa_type=JSON)
+    severity: AuditSeverity = Field(default=AuditSeverity.INFO)
+    tenant_id: uuid.UUID | None = Field(foreign_key="tenant.id", default=None)
+
+
+# Properties to receive via API on creation
+class AuditLogCreate(AuditLogBase):
+    pass
+
+
+# Properties to receive via API on update
+class AuditLogUpdate(SQLModel):
+    custom_metadata: dict | None = None
+    severity: AuditSeverity | None = None
+
+
+# Database model, database table inferred from class name
+class AuditLog(AuditLogBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    session_id: str | None = Field(default=None, max_length=255)
+
+
+# Properties to return via API, id is always required
+class AuditLogPublic(AuditLogBase):
+    id: uuid.UUID
+    timestamp: datetime
+    session_id: str | None
+
+
+class AuditLogsPublic(SQLModel):
+    data: list[AuditLogPublic]
+    count: int
+
+
+# Export response
+class AuditLogExport(SQLModel):
+    csv_data: str
+    filename: str
