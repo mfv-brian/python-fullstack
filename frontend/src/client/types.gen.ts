@@ -232,3 +232,60 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
+
+// Audit Log Types
+export type AuditLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT';
+
+export type AuditLogSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+
+export type AuditLogEntry = {
+  id: string;
+  user_id?: string;
+  session_id?: string;
+  action: AuditLogAction;
+  resource_type: string;
+  resource_id?: string;
+  timestamp: string;
+  ip_address?: string;
+  user_agent?: string;
+  before_state?: Record<string, any>;
+  after_state?: Record<string, any>;
+  metadata?: Record<string, any>;
+  severity: AuditLogSeverity;
+  tenant_id?: string;
+  message?: string;
+  user_email?: string;
+  user_name?: string;
+};
+
+export type AuditLogsPublic = {
+  data: Array<AuditLogEntry>;
+  count: number;
+};
+
+export type AuditLogFilters = {
+  start_date?: string;
+  end_date?: string;
+  user_id?: string;
+  action?: AuditLogAction;
+  resource_type?: string;
+  severity?: AuditLogSeverity;
+  tenant_id?: string;
+  search?: string;
+  skip?: number;
+  limit?: number;
+};
+
+export type AuditLogExport = {
+  format: 'JSON' | 'CSV';
+  filters?: AuditLogFilters;
+};
+
+export type AuditLogSettings = {
+  retention_days: number;
+  archival_enabled: boolean;
+  archival_days: number;
+  compression_enabled: boolean;
+  backup_enabled: boolean;
+  backup_frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+};
