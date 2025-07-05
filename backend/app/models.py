@@ -111,3 +111,53 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
+
+
+# Tenant models
+from datetime import datetime, timezone
+from enum import Enum
+
+
+class TenantStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
+# Shared properties for tenants
+class TenantBase(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    code: str = Field(unique=True, index=True, min_length=1, max_length=50)
+    status: TenantStatus = Field(default=TenantStatus.ACTIVE)
+
+
+# Properties to receive via API on creation
+class TenantCreate(TenantBase):
+    pass
+
+
+# Properties to receive via API on update
+class TenantUpdate(SQLModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    code: str | None = Field(default=None, min_length=1, max_length=50)
+    status: TenantStatus | None = None
+
+
+# Database model, database table inferred from class name
+class Tenant(TenantBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# Properties to return via API, id is always required
+class TenantPublic(TenantBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class TenantsPublic(SQLModel):
+    data: list[TenantPublic]
+    count: int
