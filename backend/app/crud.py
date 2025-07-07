@@ -46,8 +46,11 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     return db_user
 
 
-def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -> Item:
-    db_item = Item.model_validate(item_in, update={"owner_id": owner_id})
+def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID, tenant_id: uuid.UUID | None = None) -> Item:
+    update_data = {"owner_id": owner_id}
+    if tenant_id:
+        update_data["tenant_id"] = tenant_id
+    db_item = Item.model_validate(item_in, update=update_data)
     session.add(db_item)
     session.commit()
     session.refresh(db_item)

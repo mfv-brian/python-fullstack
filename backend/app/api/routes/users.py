@@ -54,7 +54,7 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_user(*, session: SessionDep, user_in: UserCreate, current_user: CurrentUser) -> Any:
     """
     Create new user.
     """
@@ -64,6 +64,10 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
+
+    # Set tenant_id from current user if not provided
+    if not user_in.tenant_id:
+        user_in.tenant_id = current_user.tenant_id
 
     user = crud.create_user(session=session, user_create=user_in)
     if settings.emails_enabled and user_in.email:
@@ -154,6 +158,25 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
             detail="The user with this email already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
+    # For signup, create a default tenant or use existing one
+    tenant = crud.get_tenant_by_code(session=session, code="default")
+    if not tenant:
+        # Create default tenant if it doesn't exist
+        from app.models import TenantCreate
+        tenant_create = TenantCreate(
+            name="Default Tenant",
+            code="default",
+            description="Default tenant for new users",
+            max_users=1000,
+            max_storage_gb=100,
+            features_enabled={
+                "audit_logs": True,
+                "user_management": True,
+                "item_management": True
+            }
+        )
+        tenant = crud.create_tenant(session=session, tenant_create=tenant_create)
+    user_create.tenant_id = tenant.id
     user = crud.create_user(session=session, user_create=user_create)
     return user
 
@@ -229,10 +252,10 @@ def delete_user(
     return Message(message="User deleted successfully")
 
 
-@router.get("/admin-only", dependencies=[Depends(get_current_admin_user)])
+@router.get("/admin-only", dependencies=[Depends(get_current_active_superuser), Depends(get_current_admin_user)])
 def admin_only_endpoint():
     return {"msg": "You are an admin"}
 
-@router.get("/auditor-only", dependencies=[Depends(get_current_auditor_user)])
+@router.get("/auditor-only", dependencies=[Depends(get_current_active_superuser), Depends(get_current_auditor_user)])
 def auditor_only_endpoint():
     return {"msg": "You are an auditor"}

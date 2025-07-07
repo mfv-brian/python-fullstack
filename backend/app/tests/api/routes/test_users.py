@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.security import verify_password
 from app.models import User, UserCreate
 from app.tests.utils.utils import random_email, random_lower_string
+from app.tests.utils.tenant import get_or_create_default_tenant
 
 
 def test_get_users_superuser_me(
@@ -61,7 +62,8 @@ def test_get_existing_user(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
     user_id = user.id
     r = client.get(
@@ -78,7 +80,8 @@ def test_get_existing_user(
 def test_get_existing_user_current_user(client: TestClient, db: Session) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
     user_id = user.id
 
@@ -119,7 +122,8 @@ def test_create_user_existing_username(
     username = random_email()
     # username = email
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     crud.create_user(session=db, user_create=user_in)
     data = {"email": username, "password": password}
     r = client.post(
@@ -151,12 +155,13 @@ def test_retrieve_users(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     crud.create_user(session=db, user_create=user_in)
 
     username2 = random_email()
     password2 = random_lower_string()
-    user_in2 = UserCreate(email=username2, password=password2)
+    user_in2 = UserCreate(email=username2, password=password2, tenant_id=tenant.id)
     crud.create_user(session=db, user_create=user_in2)
 
     r = client.get(f"{settings.API_V1_STR}/users/", headers=superuser_token_headers)
@@ -250,7 +255,8 @@ def test_update_user_me_email_exists(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
 
     data = {"email": user.email}
@@ -325,7 +331,8 @@ def test_update_user(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
 
     data = {"full_name": "Updated_full_name"}
@@ -364,12 +371,13 @@ def test_update_user_email_exists(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
 
     username2 = random_email()
     password2 = random_lower_string()
-    user_in2 = UserCreate(email=username2, password=password2)
+    user_in2 = UserCreate(email=username2, password=password2, tenant_id=tenant.id)
     user2 = crud.create_user(session=db, user_create=user_in2)
 
     data = {"email": user2.email}
@@ -385,7 +393,8 @@ def test_update_user_email_exists(
 def test_delete_user_me(client: TestClient, db: Session) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
     user_id = user.id
 
@@ -430,7 +439,8 @@ def test_delete_user_super_user(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
     user_id = user.id
     r = client.delete(
@@ -475,7 +485,8 @@ def test_delete_user_without_privileges(
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
 
     r = client.delete(

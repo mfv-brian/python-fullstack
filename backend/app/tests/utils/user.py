@@ -5,6 +5,7 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
+from app.tests.utils.tenant import get_or_create_default_tenant
 
 
 def user_authentication_headers(
@@ -22,7 +23,9 @@ def user_authentication_headers(
 def create_random_user(db: Session) -> User:
     email = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=email, password=password)
+    # Get or create default tenant
+    tenant = get_or_create_default_tenant(db)
+    user_in = UserCreate(email=email, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
     return user
 
@@ -38,7 +41,9 @@ def authentication_token_from_email(
     password = random_lower_string()
     user = crud.get_user_by_email(session=db, email=email)
     if not user:
-        user_in_create = UserCreate(email=email, password=password)
+        # Get or create default tenant
+        tenant = get_or_create_default_tenant(db)
+        user_in_create = UserCreate(email=email, password=password, tenant_id=tenant.id)
         user = crud.create_user(session=db, user_create=user_in_create)
     else:
         user_in_update = UserUpdate(password=password)

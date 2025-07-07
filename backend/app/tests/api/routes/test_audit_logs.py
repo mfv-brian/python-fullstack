@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.models import AuditAction, AuditSeverity
 from app.tests.utils.user import create_random_user
+from app.tests.utils.tenant import get_or_create_default_tenant
 
 @pytest.fixture
 def normal_user(db):
@@ -12,6 +13,7 @@ def normal_user(db):
 
 @pytest.fixture
 def audit_log_data(superuser_token_headers, db, normal_user):
+    tenant = get_or_create_default_tenant(db)
     return [
         {
             "user_id": str(normal_user.id),
@@ -24,7 +26,7 @@ def audit_log_data(superuser_token_headers, db, normal_user):
             "after_state": {"foo": "baz"},
             "custom_metadata": {"meta": "data"},
             "severity": "INFO",
-            "tenant_id": None,
+            "tenant_id": str(tenant.id),
         },
         {
             "user_id": superuser_token_headers["user_id"] if "user_id" in superuser_token_headers else str(normal_user.id),
@@ -37,7 +39,7 @@ def audit_log_data(superuser_token_headers, db, normal_user):
             "after_state": {"foo": "qux"},
             "custom_metadata": {"meta": "data2"},
             "severity": "WARNING",
-            "tenant_id": None,
+            "tenant_id": str(tenant.id),
         },
     ]
 

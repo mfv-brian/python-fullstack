@@ -57,7 +57,7 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
     return current_user
 
 
-def get_current_admin_user(current_user: CurrentUser = Depends(get_current_active_superuser)):
+def get_current_admin_user(current_user: CurrentUser) -> User:
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -66,7 +66,7 @@ def get_current_admin_user(current_user: CurrentUser = Depends(get_current_activ
     return current_user
 
 
-def get_current_auditor_user(current_user: CurrentUser = Depends(get_current_active_superuser)):
+def get_current_auditor_user(current_user: CurrentUser) -> User:
     if current_user.role != UserRole.AUDITOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

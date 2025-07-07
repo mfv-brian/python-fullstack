@@ -1,172 +1,285 @@
-# FastAPI Project - Backend
+# FastAPI Backend - Multi-Tenant Application
 
-## Requirements
+A high-performance, multi-tenant FastAPI backend with comprehensive optimization strategies for handling high-volume writes and complex queries.
 
-* [Docker](https://www.docker.com/).
-* [uv](https://docs.astral.sh/uv/) for Python package and environment management.
+## 🚀 Features
 
-## Docker Compose
+### Multi-Tenant Architecture
+- **Tenant Isolation**: Complete data separation between tenants
+- **Role-Based Access Control**: Admin, Auditor, and User roles
+- **Tenant Configuration**: Customizable limits and features per tenant
+- **Audit Logging**: Comprehensive activity tracking per tenant
 
-Start the local development environment with Docker Compose following the guide in [../development.md](../development.md).
+### Database Optimization
+- **Advanced Indexing**: Composite, partial, and full-text search indexes
+- **Data Partitioning**: Time-based and tenant-based partitioning
+- **Connection Pooling**: Optimized for high concurrency
+- **Performance Monitoring**: Real-time metrics and statistics
 
-## General Workflow
+### High-Performance Features
+- **Query Optimization**: Tenant-aware query patterns
+- **Caching Strategy**: Efficient data retrieval
+- **Storage Management**: Automatic cleanup and maintenance
+- **Scalability**: Designed for horizontal scaling
 
-By default, the dependencies are managed with [uv](https://docs.astral.sh/uv/), go there and install it.
+## 🏗️ Architecture
 
-From `./backend/` you can install all the dependencies with:
-
-```console
-$ uv sync
+### Database Schema
+```
+Tenant (1) ←→ (N) User
+Tenant (1) ←→ (N) Item  
+Tenant (1) ←→ (N) AuditLog
+Tenant (1) ←→ (N) TenantMetrics
 ```
 
-Then you can activate the virtual environment with:
+### Key Models
+- **Tenant**: Multi-tenant configuration and limits
+- **User**: Role-based user management with tenant isolation
+- **Item**: Tenant-specific data with ownership tracking
+- **AuditLog**: Comprehensive activity logging with partitioning
+- **TenantMetrics**: Performance monitoring and usage tracking
 
-```console
-$ source .venv/bin/activate
+## 📊 Performance Optimizations
+
+### Indexing Strategy
+```sql
+-- Composite indexes for tenant-based queries
+idx_user_tenant_email_active ON user (tenant_id, email, is_active)
+idx_item_tenant_created_desc ON item (tenant_id, created_at DESC)
+idx_audit_tenant_timestamp ON audit_log (tenant_id, timestamp)
+
+-- Partial indexes for performance
+idx_user_active_only ON user (tenant_id, email) WHERE is_active = true
+idx_audit_recent ON audit_log (tenant_id, timestamp) WHERE timestamp > NOW() - INTERVAL '30 days'
 ```
 
-Make sure your editor is using the correct Python virtual environment, with the interpreter at `backend/.venv/bin/python`.
+### Data Partitioning
+- **Audit Logs**: Monthly partitions for efficient querying
+- **Metrics**: Date-based partitioning for historical data
+- **Automatic Management**: Self-maintaining partition strategy
 
-Modify or add SQLModel models for data and SQL tables in `./backend/app/models.py`, API endpoints in `./backend/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/crud.py`.
-
-## VS Code
-
-There are already configurations in place to run the backend through the VS Code debugger, so that you can use breakpoints, pause and explore variables, etc.
-
-The setup is also already configured so you can run the tests through the VS Code Python tests tab.
-
-## Docker Compose Override
-
-During development, you can change Docker Compose settings that will only affect the local development environment in the file `docker-compose.override.yml`.
-
-The changes to that file only affect the local development environment, not the production environment. So, you can add "temporary" changes that help the development workflow.
-
-For example, the directory with the backend code is synchronized in the Docker container, copying the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again. It should only be done during development, for production, you should build the Docker image with a recent version of the backend code. But during development, it allows you to iterate very fast.
-
-There is also a command override that runs `fastapi run --reload` instead of the default `fastapi run`. It starts a single server process (instead of multiple, as would be for production) and reloads the process whenever the code changes. Have in mind that if you have a syntax error and save the Python file, it will break and exit, and the container will stop. After that, you can restart the container by fixing the error and running again:
-
-```console
-$ docker compose watch
-```
-
-There is also a commented out `command` override, you can uncomment it and comment the default one. It makes the backend container run a process that does "nothing", but keeps the container alive. That allows you to get inside your running container and execute commands inside, for example a Python interpreter to test installed dependencies, or start the development server that reloads when it detects changes.
-
-To get inside the container with a `bash` session you can start the stack with:
-
-```console
-$ docker compose watch
-```
-
-and then in another terminal, `exec` inside the running container:
-
-```console
-$ docker compose exec backend bash
-```
-
-You should see an output like:
-
-```console
-root@7f2607af31c3:/app#
-```
-
-that means that you are in a `bash` session inside your container, as a `root` user, under the `/app` directory, this directory has another directory called "app" inside, that's where your code lives inside the container: `/app/app`.
-
-There you can use the `fastapi run --reload` command to run the debug live reloading server.
-
-```console
-$ fastapi run --reload app/main.py
-```
-
-...it will look like:
-
-```console
-root@7f2607af31c3:/app# fastapi run --reload app/main.py
-```
-
-and then hit enter. That runs the live reloading server that auto reloads when it detects code changes.
-
-Nevertheless, if it doesn't detect a change but a syntax error, it will just stop with an error. But as the container is still alive and you are in a Bash session, you can quickly restart it after fixing the error, running the same command ("up arrow" and "Enter").
-
-...this previous detail is what makes it useful to have the container alive doing nothing and then, in a Bash session, make it run the live reload server.
-
-## Backend tests
-
-To test the backend run:
-
-```console
-$ bash ./scripts/test.sh
-```
-
-The tests run with Pytest, modify and add tests to `./backend/app/tests/`.
-
-If you use GitHub Actions the tests will run automatically.
-
-### Test running stack
-
-If your stack is already up and you just want to run the tests, you can use:
-
-```bash
-docker compose exec backend bash scripts/tests-start.sh
-```
-
-That `/app/scripts/tests-start.sh` script just calls `pytest` after making sure that the rest of the stack is running. If you need to pass extra arguments to `pytest`, you can pass them to that command and they will be forwarded.
-
-For example, to stop on first error:
-
-```bash
-docker compose exec backend bash scripts/tests-start.sh -x
-```
-
-### Test Coverage
-
-When the tests are run, a file `htmlcov/index.html` is generated, you can open it in your browser to see the coverage of the tests.
-
-## Migrations
-
-As during local development your app directory is mounted as a volume inside the container, you can also run the migrations with `alembic` commands inside the container and the migration code will be in your app directory (instead of being only inside the container). So you can add it to your git repository.
-
-Make sure you create a "revision" of your models and that you "upgrade" your database with that revision every time you change them. As this is what will update the tables in your database. Otherwise, your application will have errors.
-
-* Start an interactive session in the backend container:
-
-```console
-$ docker compose exec backend bash
-```
-
-* Alembic is already configured to import your SQLModel models from `./backend/app/models.py`.
-
-* After changing a model (for example, adding a column), inside the container, create a revision, e.g.:
-
-```console
-$ alembic revision --autogenerate -m "Add column last_name to User model"
-```
-
-* Commit to the git repository the files generated in the alembic directory.
-
-* After creating the revision, run the migration in the database (this is what will actually change the database):
-
-```console
-$ alembic upgrade head
-```
-
-If you don't want to use migrations at all, uncomment the lines in the file at `./backend/app/core/db.py` that end in:
-
+### Connection Pooling
 ```python
-SQLModel.metadata.create_all(engine)
+pool_size=20, max_overflow=30, pool_pre_ping=True
+pool_recycle=3600, pool_timeout=30
 ```
 
-and comment the line in the file `scripts/prestart.sh` that contains:
+## 🔧 Setup & Installation
 
-```console
-$ alembic upgrade head
+### Prerequisites
+- Python 3.8+
+- PostgreSQL 12+
+- Redis (optional, for caching)
+
+### Quick Start
+```bash
+# Clone the repository
+git clone <repository-url>
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run database migrations
+alembic upgrade head
+
+# Start the application
+uvicorn app.main:app --reload
 ```
 
-If you don't want to start with the default models and want to remove them / modify them, from the beginning, without having any previous revision, you can remove the revision files (`.py` Python files) under `./backend/app/alembic/versions/`. And then create a first migration as described above.
+### Environment Variables
+```env
+DATABASE_URL=postgresql://user:password@localhost/dbname
+SECRET_KEY=your-secret-key
+FIRST_SUPERUSER=admin@example.com
+FIRST_SUPERUSER_PASSWORD=changethis
+```
 
-## Email Templates
+## 📈 API Endpoints
 
-The email templates are in `./backend/app/email-templates/`. Here, there are two directories: `build` and `src`. The `src` directory contains the source files that are used to build the final email templates. The `build` directory contains the final email templates that are used by the application.
+### Authentication
+```
+POST /login/access-token     # User login
+GET  /login/test-token       # Test authentication
+POST /login/recover-password # Password recovery
+POST /login/reset-password   # Password reset
+```
 
-Before continuing, ensure you have the [MJML extension](https://marketplace.visualstudio.com/items?itemName=attilabuti.vscode-mjml) installed in your VS Code.
+### User Management
+```
+GET    /users/               # List users (admin only)
+POST   /users/               # Create user (admin only)
+GET    /users/me             # Get current user
+PATCH  /users/me             # Update current user
+POST   /users/signup         # User registration
+```
 
-Once you have the MJML extension installed, you can create a new email template in the `src` directory. After creating the new email template and with the `.mjml` file open in your editor, open the command palette with `Ctrl+Shift+P` and search for `MJML: Export to HTML`. This will convert the `.mjml` file to a `.html` file and now you can save it in the build directory.
+### Tenant Management
+```
+GET    /tenants/             # List tenants
+POST   /tenants/             # Create tenant
+GET    /tenants/{id}         # Get tenant details
+PATCH  /tenants/{id}         # Update tenant
+DELETE /tenants/{id}         # Delete tenant
+```
+
+### Item Management
+```
+GET    /items/               # List items (tenant-scoped)
+POST   /items/               # Create item
+GET    /items/{id}           # Get item details
+PATCH  /items/{id}           # Update item
+DELETE /items/{id}           # Delete item
+```
+
+### Audit Logs
+```
+GET    /audit-logs/          # List audit logs (tenant-scoped)
+POST   /audit-logs/          # Create audit log
+GET    /audit-logs/{id}      # Get audit log details
+PATCH  /audit-logs/{id}      # Update audit log
+DELETE /audit-logs/{id}      # Delete audit log
+GET    /audit-logs/export/csv # Export audit logs
+```
+
+### Database Management
+```
+GET    /utils/db/health                    # Database health check
+GET    /utils/db/stats                     # Database statistics
+POST   /utils/db/optimize                  # Run optimization tasks
+POST   /utils/db/vacuum                    # Run VACUUM
+POST   /utils/db/reindex                   # Reindex database
+GET    /utils/db/tenant/{id}/performance   # Tenant performance report
+```
+
+## 🔍 Database Optimization
+
+### Automatic Optimization
+```python
+from app.core.optimization import optimize_database
+
+# Run comprehensive optimization
+results = optimize_database()
+```
+
+### Manual Optimization
+```python
+from app.core.optimization import DatabaseOptimizer
+
+with Session(engine) as session:
+    optimizer = DatabaseOptimizer(session)
+    
+    # Create indexes
+    optimizer.create_tenant_based_indexes()
+    optimizer.create_partial_indexes()
+    
+    # Analyze tables
+    optimizer.analyze_tables()
+    
+    # Vacuum tables
+    optimizer.vacuum_tables()
+```
+
+### Performance Monitoring
+```python
+from app.core.db import get_db_stats, check_db_health
+
+# Check database health
+health = check_db_health()
+
+# Get detailed statistics
+stats = get_db_stats()
+```
+
+## 🛡️ Security Features
+
+### Multi-Tenant Security
+- **Data Isolation**: Complete separation between tenants
+- **Row-Level Security**: Database-level tenant filtering
+- **API-Level Validation**: Request-level tenant verification
+
+### Authentication & Authorization
+- **JWT Tokens**: Secure token-based authentication
+- **Role-Based Access**: Admin, Auditor, User permissions
+- **Password Security**: Bcrypt hashing with salt
+
+### Audit Trail
+- **Comprehensive Logging**: All user actions tracked
+- **Tenant-Scoped**: Audit logs isolated per tenant
+- **Performance Optimized**: Partitioned for efficient querying
+
+## 📊 Monitoring & Analytics
+
+### Tenant Metrics
+- User count and activity
+- Item count and storage usage
+- Audit log volume
+- Performance indicators
+
+### Database Performance
+- Query response times
+- Index usage statistics
+- Connection pool utilization
+- Table growth monitoring
+
+### Health Checks
+- Database connectivity
+- API endpoint availability
+- System resource usage
+- Error rate monitoring
+
+## 🚀 Deployment
+
+### Docker Deployment
+```bash
+# Build and run with Docker
+docker-compose up -d
+
+# Run migrations
+docker-compose exec backend alembic upgrade head
+```
+
+### Production Considerations
+- **Environment Variables**: Secure configuration management
+- **Database Backups**: Regular automated backups
+- **Monitoring**: Application and database monitoring
+- **Scaling**: Horizontal scaling with load balancers
+
+## 📚 Documentation
+
+### API Documentation
+- **Swagger UI**: Available at `/docs`
+- **ReDoc**: Available at `/redoc`
+- **OpenAPI Schema**: Available at `/openapi.json`
+
+### Database Schema
+- **Migration Files**: `app/alembic/versions/`
+- **Model Definitions**: `app/models.py`
+- **Schema Documentation**: `MULTI_TENANT_SCHEMA.md`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review the API documentation at `/docs`
+
+---
+
+**Built with FastAPI, SQLModel, and PostgreSQL for high-performance multi-tenant applications.**

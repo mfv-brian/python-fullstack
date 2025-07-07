@@ -9,6 +9,7 @@ from app.crud import create_user
 from app.models import UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
+from app.tests.utils.tenant import get_or_create_default_tenant
 from app.utils import generate_password_reset_token
 
 
@@ -76,6 +77,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     email = random_email()
     password = random_lower_string()
     new_password = random_lower_string()
+    tenant = get_or_create_default_tenant(db)
 
     user_create = UserCreate(
         email=email,
@@ -83,6 +85,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
         password=password,
         is_active=True,
         is_superuser=False,
+        tenant_id=tenant.id,
     )
     user = create_user(session=db, user_create=user_create)
     token = generate_password_reset_token(email=email)
