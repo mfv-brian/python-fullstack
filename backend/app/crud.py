@@ -4,7 +4,7 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import Item, ItemCreate, User, UserCreate, UserUpdate, Tenant, TenantCreate
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -52,3 +52,16 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_tenant(*, session: Session, tenant_create: TenantCreate) -> Tenant:
+    db_tenant = Tenant.model_validate(tenant_create)
+    session.add(db_tenant)
+    session.commit()
+    session.refresh(db_tenant)
+    return db_tenant
+
+
+def get_tenant_by_code(*, session: Session, code: str) -> Tenant | None:
+    statement = select(Tenant).where(Tenant.code == code)
+    return session.exec(statement).first()
