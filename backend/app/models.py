@@ -2,6 +2,13 @@ import uuid
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel, JSON
+from enum import Enum
+
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    AUDITOR = "auditor"
+    USER = "user"
 
 
 # Shared properties
@@ -10,6 +17,7 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
+    role: UserRole = Field(default=UserRole.USER)
 
 
 # Properties to receive via API on creation
@@ -29,6 +37,7 @@ class UserUpdate(UserBase):
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
     password: str | None = Field(default=None, min_length=8, max_length=40)
     tenant_id: uuid.UUID | None = Field(default=None)
+    role: UserRole | None = None
 
 
 class UserUpdateMe(SQLModel):

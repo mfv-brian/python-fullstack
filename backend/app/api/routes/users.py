@@ -9,6 +9,8 @@ from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
+    get_current_admin_user,
+    get_current_auditor_user,
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -23,6 +25,7 @@ from app.models import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
+    UserRole,
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -224,3 +227,12 @@ def delete_user(
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
+
+
+@router.get("/admin-only", dependencies=[Depends(get_current_admin_user)])
+def admin_only_endpoint():
+    return {"msg": "You are an admin"}
+
+@router.get("/auditor-only", dependencies=[Depends(get_current_auditor_user)])
+def auditor_only_endpoint():
+    return {"msg": "You are an auditor"}
