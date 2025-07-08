@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TenantsReadTenantsData, TenantsReadTenantsResponse, TenantsCreateTenantData, TenantsCreateTenantResponse, TenantsReadTenantData, TenantsReadTenantResponse, TenantsUpdateTenantData, TenantsUpdateTenantResponse, TenantsDeleteTenantData, TenantsDeleteTenantResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ItemsService {
     /**
@@ -230,6 +230,122 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
+
+export class TenantsService {
+    /**
+     * Read Tenants
+     * Retrieve tenants with optional search and filtering.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.search Search by name or code
+     * @param data.status Filter by status (active/inactive)
+     * @returns TenantsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readTenants(data: TenantsReadTenantsData = {}): CancelablePromise<TenantsReadTenantsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/tenants/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                search: data.search,
+                status: data.status
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Tenant
+     * Create new tenant.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns TenantPublic Successful Response
+     * @throws ApiError
+     */
+    public static createTenant(data: TenantsCreateTenantData): CancelablePromise<TenantsCreateTenantResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/tenants/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Tenant
+     * Get a specific tenant by id.
+     * @param data The data for the request.
+     * @param data.tenantId
+     * @returns TenantPublic Successful Response
+     * @throws ApiError
+     */
+    public static readTenant(data: TenantsReadTenantData): CancelablePromise<TenantsReadTenantResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/tenants/{tenant_id}',
+            path: {
+                tenant_id: data.tenantId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Tenant
+     * Update a tenant.
+     * @param data The data for the request.
+     * @param data.tenantId
+     * @param data.requestBody
+     * @returns TenantPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateTenant(data: TenantsUpdateTenantData): CancelablePromise<TenantsUpdateTenantResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/tenants/{tenant_id}',
+            path: {
+                tenant_id: data.tenantId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Tenant
+     * Delete a tenant.
+     * @param data The data for the request.
+     * @param data.tenantId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteTenant(data: TenantsDeleteTenantData): CancelablePromise<TenantsDeleteTenantResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/tenants/{tenant_id}',
+            path: {
+                tenant_id: data.tenantId
+            },
             errors: {
                 422: 'Validation Error'
             }

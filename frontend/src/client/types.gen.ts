@@ -51,6 +51,37 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type TenantCreate = {
+    name: string;
+    description?: (string | null);
+    code: string;
+    status?: TenantStatus;
+};
+
+export type TenantPublic = {
+    name: string;
+    description?: (string | null);
+    code: string;
+    status?: TenantStatus;
+    id: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type TenantsPublic = {
+    data: Array<TenantPublic>;
+    count: number;
+};
+
+export type TenantStatus = 'active' | 'inactive';
+
+export type TenantUpdate = {
+    name?: (string | null);
+    description?: (string | null);
+    code?: (string | null);
+    status?: (TenantStatus | null);
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -171,6 +202,46 @@ export type PrivateCreateUserData = {
 
 export type PrivateCreateUserResponse = (UserPublic);
 
+export type TenantsReadTenantsData = {
+    limit?: number;
+    /**
+     * Search by name or code
+     */
+    search?: (string | null);
+    skip?: number;
+    /**
+     * Filter by status (active/inactive)
+     */
+    status?: (string | null);
+};
+
+export type TenantsReadTenantsResponse = (TenantsPublic);
+
+export type TenantsCreateTenantData = {
+    requestBody: TenantCreate;
+};
+
+export type TenantsCreateTenantResponse = (TenantPublic);
+
+export type TenantsReadTenantData = {
+    tenantId: string;
+};
+
+export type TenantsReadTenantResponse = (TenantPublic);
+
+export type TenantsUpdateTenantData = {
+    requestBody: TenantUpdate;
+    tenantId: string;
+};
+
+export type TenantsUpdateTenantResponse = (TenantPublic);
+
+export type TenantsDeleteTenantData = {
+    tenantId: string;
+};
+
+export type TenantsDeleteTenantResponse = (Message);
+
 export type UsersReadUsersData = {
     limit?: number;
     skip?: number;
@@ -234,58 +305,98 @@ export type UtilsTestEmailResponse = (Message);
 export type UtilsHealthCheckResponse = (boolean);
 
 // Audit Log Types
-export type AuditLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT';
+export type AuditLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT' | 'ADMIN_ACTION' | 'SYSTEM_EVENT';
 
 export type AuditLogSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 
 export type AuditLogEntry = {
-  id: string;
-  user_id?: string;
-  session_id?: string;
-  action: AuditLogAction;
-  resource_type: string;
-  resource_id?: string;
-  timestamp: string;
-  ip_address?: string;
-  user_agent?: string;
-  before_state?: Record<string, any>;
-  after_state?: Record<string, any>;
-  metadata?: Record<string, any>;
-  severity: AuditLogSeverity;
-  tenant_id?: string;
-  message?: string;
-  user_email?: string;
-  user_name?: string;
-};
-
-export type AuditLogsPublic = {
-  data: Array<AuditLogEntry>;
-  count: number;
+    id: string;
+    user_id?: string;
+    user_email?: string;
+    user_name?: string;
+    session_id?: string;
+    action: AuditLogAction;
+    resource_type: string;
+    resource_id?: string;
+    timestamp: string;
+    ip_address?: string;
+    user_agent?: string;
+    before_state?: Record<string, any>;
+    after_state?: Record<string, any>;
+    metadata?: Record<string, any>;
+    severity: AuditLogSeverity;
+    tenant_id?: string;
+    message?: string;
+    correlation_id?: string;
+    duration_ms?: number;
+    request_id?: string;
+    api_endpoint?: string;
+    status_code?: number;
 };
 
 export type AuditLogFilters = {
-  start_date?: string;
-  end_date?: string;
-  user_id?: string;
-  action?: AuditLogAction;
-  resource_type?: string;
-  severity?: AuditLogSeverity;
-  tenant_id?: string;
-  search?: string;
-  skip?: number;
-  limit?: number;
-};
-
-export type AuditLogExport = {
-  format: 'JSON' | 'CSV';
-  filters?: AuditLogFilters;
+    search?: string;
+    start_date?: string;
+    end_date?: string;
+    action?: AuditLogAction;
+    resource_type?: string;
+    severity?: AuditLogSeverity;
+    user_id?: string;
+    tenant_id?: string;
+    ip_address?: string;
+    correlation_id?: string;
+    page?: number;
+    limit?: number;
 };
 
 export type AuditLogSettings = {
-  retention_days: number;
-  archival_enabled: boolean;
-  archival_days: number;
-  compression_enabled: boolean;
-  backup_enabled: boolean;
-  backup_frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+    retention_days: number;
+    enable_archival: boolean;
+    archival_threshold_days: number;
+    enable_compression: boolean;
+    backup_frequency: 'daily' | 'weekly' | 'monthly';
+    enable_real_time_monitoring: boolean;
+    log_level: AuditLogSeverity;
+    enable_export: boolean;
+    max_export_records: number;
+    enable_data_masking: boolean;
+    tenant_isolation: boolean;
+};
+
+export type AuditLogStats = {
+    total_logs: number;
+    logs_today: number;
+    logs_this_week: number;
+    logs_this_month: number;
+    by_severity: Record<AuditLogSeverity, number>;
+    by_action: Record<AuditLogAction, number>;
+    by_tenant: Record<string, number>;
+    top_users: Array<{
+        user_id: string;
+        user_name: string;
+        count: number;
+    }>;
+    top_resources: Array<{
+        resource_type: string;
+        count: number;
+    }>;
+    recent_activity: Array<{
+        hour: string;
+        count: number;
+    }>;
+};
+
+export type TenantActivityStats = {
+    tenant_id: string;
+    tenant_name: string;
+    total_logs: number;
+    active_users: number;
+    most_common_actions: Array<{
+        action: AuditLogAction;
+        count: number;
+    }>;
+    recent_activity: Array<{
+        timestamp: string;
+        count: number;
+    }>;
 };

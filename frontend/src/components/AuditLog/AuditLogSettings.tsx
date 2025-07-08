@@ -40,16 +40,21 @@ const AuditLogSettings = () => {
   } = useForm<AuditLogSettings>({
     defaultValues: {
       retention_days: 90,
-      archival_enabled: true,
-      archival_days: 30,
-      compression_enabled: true,
-      backup_enabled: true,
-      backup_frequency: "WEEKLY",
+      enable_archival: true,
+      archival_threshold_days: 30,
+      enable_compression: true,
+      backup_frequency: "weekly",
+      enable_real_time_monitoring: true,
+      log_level: "INFO",
+      enable_export: true,
+      max_export_records: 10000,
+      enable_data_masking: false,
+      tenant_isolation: true,
     },
   })
 
-  const archivalEnabled = watch("archival_enabled")
-  const backupEnabled = watch("backup_enabled")
+  const archivalEnabled = watch("enable_archival")
+  const compressionEnabled = watch("enable_compression")
 
   const onSubmit = async (data: AuditLogSettings) => {
     setIsLoading(true)
@@ -147,7 +152,7 @@ const AuditLogSettings = () => {
                 <Field>
                   <Checkbox
                     checked={archivalEnabled}
-                    onCheckedChange={({ checked }) => setValue("archival_enabled", !!checked)}
+                    onCheckedChange={({ checked }) => setValue("enable_archival", !!checked)}
                   >
                     Enable automatic archival
                   </Checkbox>
@@ -159,12 +164,12 @@ const AuditLogSettings = () => {
                       <Field
                         label="Archive After (Days)"
                         helperText="Move logs to cold storage after this period"
-                        invalid={!!errors.archival_days}
-                        errorText={errors.archival_days?.message}
+                        invalid={!!errors.archival_threshold_days}
+                        errorText={errors.archival_threshold_days?.message}
                       >
                         <Input
                           type="number"
-                          {...register("archival_days", {
+                          {...register("archival_threshold_days", {
                             required: archivalEnabled ? "Archival days is required" : false,
                             min: { value: 1, message: "Must be at least 1 day" },
                           })}
@@ -211,8 +216,8 @@ const AuditLogSettings = () => {
               <VStack gap={4} align="stretch">
                 <Field>
                   <Checkbox
-                    checked={watch("compression_enabled")}
-                    onCheckedChange={({ checked }) => setValue("compression_enabled", !!checked)}
+                    checked={compressionEnabled}
+                    onCheckedChange={({ checked }) => setValue("enable_compression", !!checked)}
                   >
                     Enable data compression
                   </Checkbox>
@@ -239,32 +244,21 @@ const AuditLogSettings = () => {
             </Card.Header>
             <Card.Body>
               <VStack gap={4} align="stretch">
-                <Field>
-                  <Checkbox
-                    checked={backupEnabled}
-                    onCheckedChange={({ checked }) => setValue("backup_enabled", !!checked)}
-                  >
-                    Enable automatic backups
-                  </Checkbox>
-                </Field>
-
-                {backupEnabled && (
-                  <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
-                    <GridItem>
-                      <Field label="Backup Frequency">
-                        <NativeSelectRoot>
-                          <NativeSelectField
-                            {...register("backup_frequency")}
-                          >
-                            <option value="DAILY">Daily</option>
-                            <option value="WEEKLY">Weekly</option>
-                            <option value="MONTHLY">Monthly</option>
-                          </NativeSelectField>
-                        </NativeSelectRoot>
-                      </Field>
-                    </GridItem>
-                  </Grid>
-                )}
+                <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
+                  <GridItem>
+                    <Field label="Backup Frequency">
+                      <NativeSelectRoot>
+                        <NativeSelectField
+                          {...register("backup_frequency")}
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </NativeSelectField>
+                      </NativeSelectRoot>
+                    </Field>
+                  </GridItem>
+                </Grid>
 
                 <HStack p={3} bg="purple.50" borderRadius="md">
                   <Text fontSize="sm" color="purple.800">
@@ -272,6 +266,102 @@ const AuditLogSettings = () => {
                     Backups are encrypted and stored in geographically distributed locations.
                   </Text>
                 </HStack>
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
+          {/* Additional Settings */}
+          <Card.Root>
+            <Card.Header>
+              <HStack>
+                <FiSettings />
+                <Text fontSize="lg" fontWeight="bold">
+                  Additional Settings
+                </Text>
+              </HStack>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={4} align="stretch">
+                <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
+                  <GridItem>
+                    <Field>
+                      <Checkbox
+                        checked={watch("enable_real_time_monitoring")}
+                        onCheckedChange={({ checked }) => setValue("enable_real_time_monitoring", !!checked)}
+                      >
+                        Enable real-time monitoring
+                      </Checkbox>
+                    </Field>
+                  </GridItem>
+                  <GridItem>
+                    <Field>
+                      <Checkbox
+                        checked={watch("enable_export")}
+                        onCheckedChange={({ checked }) => setValue("enable_export", !!checked)}
+                      >
+                        Enable data export
+                      </Checkbox>
+                    </Field>
+                  </GridItem>
+                  <GridItem>
+                    <Field>
+                      <Checkbox
+                        checked={watch("enable_data_masking")}
+                        onCheckedChange={({ checked }) => setValue("enable_data_masking", !!checked)}
+                      >
+                        Enable data masking
+                      </Checkbox>
+                    </Field>
+                  </GridItem>
+                  <GridItem>
+                    <Field>
+                      <Checkbox
+                        checked={watch("tenant_isolation")}
+                        onCheckedChange={({ checked }) => setValue("tenant_isolation", !!checked)}
+                      >
+                        Enable tenant isolation
+                      </Checkbox>
+                    </Field>
+                  </GridItem>
+                </Grid>
+
+                <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
+                  <GridItem>
+                    <Field
+                      label="Log Level"
+                      helperText="Minimum severity level to log"
+                    >
+                      <NativeSelectRoot>
+                        <NativeSelectField
+                          {...register("log_level")}
+                        >
+                          <option value="INFO">Info</option>
+                          <option value="WARNING">Warning</option>
+                          <option value="ERROR">Error</option>
+                          <option value="CRITICAL">Critical</option>
+                        </NativeSelectField>
+                      </NativeSelectRoot>
+                    </Field>
+                  </GridItem>
+                  <GridItem>
+                    <Field
+                      label="Max Export Records"
+                      helperText="Maximum number of records for export"
+                      invalid={!!errors.max_export_records}
+                      errorText={errors.max_export_records?.message}
+                    >
+                      <Input
+                        type="number"
+                        {...register("max_export_records", {
+                          required: "Max export records is required",
+                          min: { value: 1, message: "Must be at least 1" },
+                          max: { value: 1000000, message: "Cannot exceed 1,000,000 records" },
+                        })}
+                        placeholder="10000"
+                      />
+                    </Field>
+                  </GridItem>
+                </Grid>
               </VStack>
             </Card.Body>
           </Card.Root>

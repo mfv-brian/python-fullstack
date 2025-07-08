@@ -87,23 +87,25 @@ const AuditLogFilters = ({ onFiltersChange, onReset, loading }: AuditLogFiltersP
           {/* Advanced Filters */}
           {isExpanded && (
             <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              <GridItem>
-                <Field label="Start Date">
-                  <Input
-                    type="datetime-local"
-                    {...register("start_date")}
-                    size="sm"
-                  />
-                </Field>
-              </GridItem>
-
-              <GridItem>
-                <Field label="End Date">
-                  <Input
-                    type="datetime-local"
-                    {...register("end_date")}
-                    size="sm"
-                  />
+              <GridItem colSpan={2}>
+                <Field label="Date Range">
+                  <HStack>
+                    <Input
+                      type="datetime-local"
+                      {...register("start_date")}
+                      placeholder="Start date"
+                      size="sm"
+                    />
+                    <Box px={2} color="gray.500">
+                      to
+                    </Box>
+                    <Input
+                      type="datetime-local"
+                      {...register("end_date")}
+                      placeholder="End date"
+                      size="sm"
+                    />
+                  </HStack>
                 </Field>
               </GridItem>
 
