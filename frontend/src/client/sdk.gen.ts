@@ -3,7 +3,170 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TenantsReadTenantsData, TenantsReadTenantsResponse, TenantsCreateTenantData, TenantsCreateTenantResponse, TenantsReadTenantData, TenantsReadTenantResponse, TenantsUpdateTenantData, TenantsUpdateTenantResponse, TenantsDeleteTenantData, TenantsDeleteTenantResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AuditLogsReadAuditLogsData, AuditLogsReadAuditLogsResponse, AuditLogsCreateAuditLogData, AuditLogsCreateAuditLogResponse, AuditLogsReadAuditLogData, AuditLogsReadAuditLogResponse, AuditLogsUpdateAuditLogData, AuditLogsUpdateAuditLogResponse, AuditLogsDeleteAuditLogData, AuditLogsDeleteAuditLogResponse, AuditLogsExportAuditLogsCsvData, AuditLogsExportAuditLogsCsvResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, TenantsReadTenantsData, TenantsReadTenantsResponse, TenantsCreateTenantData, TenantsCreateTenantResponse, TenantsReadTenantData, TenantsReadTenantResponse, TenantsUpdateTenantData, TenantsUpdateTenantResponse, TenantsDeleteTenantData, TenantsDeleteTenantResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UsersAdminOnlyEndpointResponse, UsersAuditorOnlyEndpointResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsCheckDatabaseHealthResponse, UtilsGetDatabaseStatisticsResponse, UtilsOptimizeDatabaseEndpointResponse, UtilsVacuumDatabaseEndpointResponse, UtilsReindexDatabaseEndpointResponse, UtilsGetTenantPerformanceData, UtilsGetTenantPerformanceResponse } from './types.gen';
+
+export class AuditLogsService {
+    /**
+     * Read Audit Logs
+     * Retrieve audit logs with filtering options.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.userId Filter by user ID
+     * @param data.action Filter by action type
+     * @param data.resourceType Filter by resource type
+     * @param data.resourceId Filter by resource ID
+     * @param data.severity Filter by severity level
+     * @param data.tenantId Filter by tenant ID
+     * @param data.startDate Start date for filtering
+     * @param data.endDate End date for filtering
+     * @returns AuditLogsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAuditLogs(data: AuditLogsReadAuditLogsData = {}): CancelablePromise<AuditLogsReadAuditLogsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/audit-logs/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                user_id: data.userId,
+                action: data.action,
+                resource_type: data.resourceType,
+                resource_id: data.resourceId,
+                severity: data.severity,
+                tenant_id: data.tenantId,
+                start_date: data.startDate,
+                end_date: data.endDate
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Audit Log
+     * Create new audit log entry.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AuditLogPublic Successful Response
+     * @throws ApiError
+     */
+    public static createAuditLog(data: AuditLogsCreateAuditLogData): CancelablePromise<AuditLogsCreateAuditLogResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/audit-logs/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Audit Log
+     * Get a specific audit log by id.
+     * @param data The data for the request.
+     * @param data.auditLogId
+     * @returns AuditLogPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAuditLog(data: AuditLogsReadAuditLogData): CancelablePromise<AuditLogsReadAuditLogResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/audit-logs/{audit_log_id}',
+            path: {
+                audit_log_id: data.auditLogId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Audit Log
+     * Update an audit log entry.
+     * @param data The data for the request.
+     * @param data.auditLogId
+     * @param data.requestBody
+     * @returns AuditLogPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateAuditLog(data: AuditLogsUpdateAuditLogData): CancelablePromise<AuditLogsUpdateAuditLogResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/audit-logs/{audit_log_id}',
+            path: {
+                audit_log_id: data.auditLogId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Audit Log
+     * Delete an audit log entry.
+     * @param data The data for the request.
+     * @param data.auditLogId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteAuditLog(data: AuditLogsDeleteAuditLogData): CancelablePromise<AuditLogsDeleteAuditLogResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/audit-logs/{audit_log_id}',
+            path: {
+                audit_log_id: data.auditLogId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Export Audit Logs Csv
+     * Export audit logs to CSV format.
+     * @param data The data for the request.
+     * @param data.userId Filter by user ID
+     * @param data.action Filter by action type
+     * @param data.resourceType Filter by resource type
+     * @param data.resourceId Filter by resource ID
+     * @param data.severity Filter by severity level
+     * @param data.tenantId Filter by tenant ID
+     * @param data.startDate Start date for filtering
+     * @param data.endDate End date for filtering
+     * @returns AuditLogExport Successful Response
+     * @throws ApiError
+     */
+    public static exportAuditLogsCsv(data: AuditLogsExportAuditLogsCsvData = {}): CancelablePromise<AuditLogsExportAuditLogsCsvResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/audit-logs/export/csv',
+            query: {
+                user_id: data.userId,
+                action: data.action,
+                resource_type: data.resourceType,
+                resource_id: data.resourceId,
+                severity: data.severity,
+                tenant_id: data.tenantId,
+                start_date: data.startDate,
+                end_date: data.endDate
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
 
 export class ItemsService {
     /**
@@ -550,6 +713,30 @@ export class UsersService {
         });
     }
     
+    /**
+     * Admin Only Endpoint
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static adminOnlyEndpoint(): CancelablePromise<UsersAdminOnlyEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users/admin-only'
+        });
+    }
+    
+    /**
+     * Auditor Only Endpoint
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static auditorOnlyEndpoint(): CancelablePromise<UsersAuditorOnlyEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users/auditor-only'
+        });
+    }
+    
 }
 
 export class UtilsService {
@@ -583,6 +770,92 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/health-check/'
+        });
+    }
+    
+    /**
+     * Check Database Health
+     * Check database health and connectivity.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static checkDatabaseHealth(): CancelablePromise<UtilsCheckDatabaseHealthResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/utils/db/health'
+        });
+    }
+    
+    /**
+     * Get Database Statistics
+     * Get database statistics and connection pool info.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getDatabaseStatistics(): CancelablePromise<UtilsGetDatabaseStatisticsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/utils/db/stats'
+        });
+    }
+    
+    /**
+     * Optimize Database Endpoint
+     * Run database optimization tasks.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static optimizeDatabaseEndpoint(): CancelablePromise<UtilsOptimizeDatabaseEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/utils/db/optimize'
+        });
+    }
+    
+    /**
+     * Vacuum Database Endpoint
+     * Run VACUUM on the database.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static vacuumDatabaseEndpoint(): CancelablePromise<UtilsVacuumDatabaseEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/utils/db/vacuum'
+        });
+    }
+    
+    /**
+     * Reindex Database Endpoint
+     * Reindex the database.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static reindexDatabaseEndpoint(): CancelablePromise<UtilsReindexDatabaseEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/utils/db/reindex'
+        });
+    }
+    
+    /**
+     * Get Tenant Performance
+     * Get performance report for a specific tenant.
+     * @param data The data for the request.
+     * @param data.tenantId
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getTenantPerformance(data: UtilsGetTenantPerformanceData): CancelablePromise<UtilsGetTenantPerformanceResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/utils/db/tenant/{tenant_id}/performance',
+            path: {
+                tenant_id: data.tenantId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     

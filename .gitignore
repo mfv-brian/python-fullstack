@@ -4,3 +4,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.spectory
+/.spectory/history/
+/.idea/
+/.vscode/

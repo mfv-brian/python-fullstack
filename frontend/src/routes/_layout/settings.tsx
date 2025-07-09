@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_layout/settings")({
 
 function UserSettings() {
   const { user: currentUser } = useAuth()
-  const finalTabs = currentUser?.is_superuser
+  const finalTabs = currentUser?.role === "admin"
     ? tabsConfig.slice(0, 3)
     : tabsConfig
 

@@ -107,7 +107,7 @@ class UserBase(SQLModel):
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
-    tenant_id: uuid.UUID | None = Field(default=None)
+    tenant_id: uuid.UUID
 
 
 class UserRegister(SQLModel):

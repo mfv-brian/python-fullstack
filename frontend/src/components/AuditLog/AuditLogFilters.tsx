@@ -11,10 +11,22 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { FiFilter, FiSearch, FiX } from "react-icons/fi"
 
-import type { AuditLogFilters } from "../../client/types.gen"
+import type { AuditAction, AuditSeverity } from "../../client/types.gen"
 import { Field } from "../ui/field"
 import { InputGroup } from "../ui/input-group"
 import { NativeSelectField, NativeSelectRoot } from "../ui/native-select"
+
+// Define the filters type
+interface AuditLogFilters {
+  search?: string;
+  action?: AuditAction;
+  severity?: AuditSeverity;
+  resource_type?: string;
+  start_date?: string;
+  end_date?: string;
+  user_id?: string;
+  tenant_id?: string;
+}
 
 interface AuditLogFiltersProps {
   onFiltersChange: (filters: AuditLogFilters) => void

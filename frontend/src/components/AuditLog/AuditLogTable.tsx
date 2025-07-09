@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { FiDownload, FiEye, FiSearch } from "react-icons/fi"
 
-import type { AuditLogEntry } from "../../client/types.gen"
+import type { AuditLogPublic, AuditAction, AuditSeverity } from "../../client/types.gen"
 import {
   PaginationItems,
   PaginationNextTrigger,
@@ -25,6 +25,28 @@ import { SkeletonText } from "../ui/skeleton"
 import AuditLogDetails from "./AuditLogDetails"
 import AuditLogExport from "./AuditLogExport"
 import AuditLogFilters from "./AuditLogFilters"
+
+// Define an extended type with the additional fields needed for this component
+interface ExtendedAuditLog extends AuditLogPublic {
+  user_name?: string;
+  user_email?: string;
+  message?: string;
+  severity: AuditSeverity;
+  action: AuditAction;
+  timestamp: string; // Make timestamp required
+}
+
+// Define the filters type
+interface AuditLogFilterOptions {
+  search?: string;
+  action?: AuditAction;
+  severity?: AuditSeverity;
+  resource_type?: string;
+  start_date?: string;
+  end_date?: string;
+  user_id?: string;
+  tenant_id?: string;
+}
 
 const PER_PAGE = 10
 
@@ -75,9 +97,9 @@ const mockAuditLogs = {
     },
   ],
   count: 3,
-} as { data: AuditLogEntry[]; count: number }
+} as { data: ExtendedAuditLog[]; count: number }
 
-function getAuditLogsQueryOptions({ page, filters }: { page: number; filters?: AuditLogFilters }) {
+function getAuditLogsQueryOptions({ page, filters }: { page: number; filters?: AuditLogFilterOptions }) {
   return {
     queryFn: async () => {
       // Simulate API call
@@ -109,8 +131,8 @@ const formatTimestamp = (timestamp: string) => {
 
 function AuditLogTable() {
   const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState<AuditLogFilters>({})
-  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null)
+  const [filters, setFilters] = useState<AuditLogFilterOptions>({})
+  const [selectedLog, setSelectedLog] = useState<ExtendedAuditLog | null>(null)
   const [showExport, setShowExport] = useState(false)
 
   const { data, isLoading, isPlaceholderData } = useQuery({
@@ -121,7 +143,7 @@ function AuditLogTable() {
   const logs = data?.data.slice(0, PER_PAGE) ?? []
   const count = data?.count ?? 0
 
-  const handleFiltersChange = (newFilters: AuditLogFilters) => {
+  const handleFiltersChange = (newFilters: AuditLogFilterOptions) => {
     setFilters(newFilters)
     setPage(1)
   }

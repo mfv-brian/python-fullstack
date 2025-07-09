@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { type UserPublic, UsersService } from "@/client"
+import { type UserPublic, UsersService, TenantsService, type TenantsPublic } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
@@ -28,6 +28,13 @@ function getUsersQueryOptions({ page }: { page: number }) {
   }
 }
 
+function getTenantsQueryOptions() {
+  return {
+    queryFn: () => TenantsService.readTenants({ limit: 1000 }),
+    queryKey: ["tenants"],
+  }
+}
+
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
   validateSearch: (search) => usersSearchSchema.parse(search),
@@ -44,6 +51,10 @@ function UsersTable() {
     placeholderData: (prevData) => prevData,
   })
 
+  const { data: tenantsData } = useQuery({
+    ...getTenantsQueryOptions(),
+  })
+
   const setPage = (page: number) =>
     navigate({
       search: (prev: { [key: string]: string }) => ({ ...prev, page }),
@@ -51,6 +62,10 @@ function UsersTable() {
 
   const users = data?.data.slice(0, PER_PAGE) ?? []
   const count = data?.count ?? 0
+  const tenants = tenantsData?.data ?? []
+
+  // Create a map of tenant IDs to tenant names for quick lookup
+  const tenantMap = new Map(tenants.map(tenant => [tenant.id, tenant.name]))
 
   if (isLoading) {
     return <PendingUsers />
@@ -65,6 +80,7 @@ function UsersTable() {
             <Table.ColumnHeader w="sm">Email</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Role</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Status</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Tenant</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Actions</Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
@@ -83,9 +99,20 @@ function UsersTable() {
                 {user.email}
               </Table.Cell>
               <Table.Cell>
-                {user.is_superuser ? "Superuser" : "User"}
+                <Badge
+                  colorScheme={
+                    user.role === "admin" ? "red" :
+                    user.role === "auditor" ? "orange" :
+                    "blue"
+                  }
+                >
+                  {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
+                </Badge>
               </Table.Cell>
               <Table.Cell>{user.is_active ? "Active" : "Inactive"}</Table.Cell>
+              <Table.Cell>
+                {tenantMap.get(user.tenant_id) || "Unknown Tenant"}
+              </Table.Cell>
               <Table.Cell>
                 <UserActionsMenu
                   user={user}

@@ -8,7 +8,7 @@ import {
 import { useState } from "react"
 import { FiDownload, FiFile, FiFileText } from "react-icons/fi"
 
-import type { AuditLogFilters } from "../../client/types.gen"
+import type { AuditAction, AuditSeverity } from "../../client/types.gen"
 import {
   DialogActionTrigger,
   DialogBody,
@@ -19,6 +19,18 @@ import {
   DialogRoot,
   DialogTitle,
 } from "../ui/dialog"
+
+// Use the same interface as defined in AuditLogTable
+interface AuditLogFilters {
+  search?: string;
+  action?: AuditAction;
+  severity?: AuditSeverity;
+  resource_type?: string;
+  start_date?: string;
+  end_date?: string;
+  user_id?: string;
+  tenant_id?: string;
+}
 
 interface AuditLogExportProps {
   isOpen: boolean

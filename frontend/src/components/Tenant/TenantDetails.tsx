@@ -27,7 +27,8 @@ interface TenantDetailsProps {
 }
 
 const TenantDetails = ({ tenant, isOpen, onClose }: TenantDetailsProps) => {
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp: string | undefined) => {
+    if (!timestamp) return "N/A";
     return new Date(timestamp).toLocaleString()
   }
 

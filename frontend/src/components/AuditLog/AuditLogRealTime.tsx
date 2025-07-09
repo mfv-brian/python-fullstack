@@ -12,12 +12,22 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { FiActivity, FiPause, FiPlay, FiTrash2 } from "react-icons/fi"
 
-import type { AuditLogEntry } from "../../client/types.gen"
+import type { AuditLogPublic, AuditAction, AuditSeverity } from "../../client/types.gen"
+
+// Define an extended type with the additional fields needed for this component
+interface ExtendedAuditLog extends AuditLogPublic {
+  user_name?: string;
+  user_email?: string;
+  message?: string;
+  severity: AuditSeverity;
+  action: AuditAction;
+  timestamp: string; // Make timestamp required
+}
 
 const AuditLogRealTime = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [logs, setLogs] = useState<AuditLogEntry[]>([])
+  const [logs, setLogs] = useState<ExtendedAuditLog[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
   const logsEndRef = useRef<HTMLDivElement>(null)
   const intervalRef = useRef<number | null>(null)
@@ -29,7 +39,7 @@ const AuditLogRealTime = () => {
     // Simulate receiving real-time logs
     intervalRef.current = window.setInterval(() => {
       if (!isPaused) {
-        const mockLog: AuditLogEntry = {
+        const mockLog: ExtendedAuditLog = {
           id: Date.now().toString(),
           user_id: `user${Math.floor(Math.random() * 100)}`,
           user_email: `user${Math.floor(Math.random() * 100)}@example.com`,

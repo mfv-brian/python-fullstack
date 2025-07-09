@@ -1,6 +1,6 @@
 import { Container, Heading, Tabs } from "@chakra-ui/react"
 import { useState } from "react"
-import { FiHome, FiSettings, FiUsers } from "react-icons/fi"
+import { FiHome } from "react-icons/fi"
 
 import TenantTable from "./TenantTable"
 

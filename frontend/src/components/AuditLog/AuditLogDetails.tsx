@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react"
 import { FiCalendar, FiGlobe, FiMonitor, FiUser } from "react-icons/fi"
 
-import type { AuditLogEntry } from "../../client/types.gen"
+import type { AuditLogPublic, AuditSeverity, AuditAction } from "../../client/types.gen"
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -20,8 +20,19 @@ import {
   DialogTitle,
 } from "../ui/dialog"
 
+// Extend the AuditLogPublic type with additional fields needed for the UI
+interface ExtendedAuditLog extends AuditLogPublic {
+  user_name?: string;
+  user_email?: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+  severity: AuditSeverity;
+  action: AuditAction;
+  timestamp: string; // Make timestamp required
+}
+
 interface AuditLogDetailsProps {
-  log: AuditLogEntry
+  log: ExtendedAuditLog
   isOpen: boolean
   onClose: () => void
 }

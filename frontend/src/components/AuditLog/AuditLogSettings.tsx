@@ -22,10 +22,25 @@ import {
   FiTrash2,
 } from "react-icons/fi"
 
-import type { AuditLogSettings } from "../../client/types.gen"
+import type { AuditSeverity } from "../../client/types.gen"
 import { Checkbox } from "../ui/checkbox"
 import { Field } from "../ui/field"
 import { NativeSelectField, NativeSelectRoot } from "../ui/native-select"
+
+// Define the settings type
+interface AuditLogSettings {
+  retention_days: number;
+  enable_archival: boolean;
+  archival_threshold_days: number;
+  enable_compression: boolean;
+  backup_frequency: 'daily' | 'weekly' | 'monthly';
+  enable_real_time_monitoring: boolean;
+  log_level: AuditSeverity;
+  enable_export: boolean;
+  max_export_records: number;
+  enable_data_masking: boolean;
+  tenant_isolation: boolean;
+}
 
 const AuditLogSettings = () => {
   const [isLoading, setIsLoading] = useState(false)

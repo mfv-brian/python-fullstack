@@ -13,18 +13,41 @@ logger = logging.getLogger(__name__)
 
 def init() -> None:
     with Session(engine) as session:
+        # Create or get default tenant for superuser
+        default_tenant_code = "DEFAULT"
+        default_tenant = crud.get_tenant_by_code(session=session, code=default_tenant_code)
+        if not default_tenant:
+            default_tenant = crud.create_tenant(
+                session=session,
+                tenant_create=TenantCreate(
+                    name="Default Tenant",
+                    description="Default tenant for superuser",
+                    code=default_tenant_code,
+                    status="active"
+                )
+            )
+            logger.info(f"Created default tenant: {default_tenant.name}")
+        # Always ensure default_tenant is set
+        assert default_tenant is not None, "Default tenant must exist before creating superuser"
+
         # Create superuser first
         user = session.exec(
             select(User).where(User.email == settings.FIRST_SUPERUSER)
         ).first()
-        if not user:
-            user_in = UserCreate(
-                email=settings.FIRST_SUPERUSER,
-                password=settings.FIRST_SUPERUSER_PASSWORD,
-                is_superuser=True,
-            )
-            user = crud.create_user(session=session, user_create=user_in)
-            logger.info(f"Created superuser: {user.email}")
+        if user:
+            # Remove existing superuser to recreate it
+            session.delete(user)
+            session.commit()
+            logger.info(f"Removed existing superuser: {settings.FIRST_SUPERUSER}")
+        
+        user_in = UserCreate(
+            email=settings.FIRST_SUPERUSER,
+            password=settings.FIRST_SUPERUSER_PASSWORD,
+            is_superuser=True,
+            tenant_id=default_tenant.id
+        )
+        user = crud.create_user(session=session, user_create=user_in)
+        logger.info(f"Created superuser: {user.email}")
         
         # Call the original init_db function
         init_db(session)

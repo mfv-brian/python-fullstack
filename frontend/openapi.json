@@ -650,6 +650,54 @@
         }
       }
     },
+    "/api/v1/users/admin-only": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Admin Only Endpoint",
+        "operationId": "users-admin_only_endpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/auditor-only": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Auditor Only Endpoint",
+        "operationId": "users-auditor_only_endpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/utils/test-email/": {
       "post": {
         "tags": [
@@ -714,6 +762,147 @@
                 "schema": {
                   "type": "boolean",
                   "title": "Response Utils-Health Check"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/health": {
+      "get": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Check Database Health",
+        "description": "Check database health and connectivity.",
+        "operationId": "utils-check_database_health",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/stats": {
+      "get": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Get Database Statistics",
+        "description": "Get database statistics and connection pool info.",
+        "operationId": "utils-get_database_statistics",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/optimize": {
+      "post": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Optimize Database Endpoint",
+        "description": "Run database optimization tasks.",
+        "operationId": "utils-optimize_database_endpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/vacuum": {
+      "post": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Vacuum Database Endpoint",
+        "description": "Run VACUUM on the database.",
+        "operationId": "utils-vacuum_database_endpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/reindex": {
+      "post": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Reindex Database Endpoint",
+        "description": "Reindex the database.",
+        "operationId": "utils-reindex_database_endpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utils/db/tenant/{tenant_id}/performance": {
+      "get": {
+        "tags": [
+          "utils"
+        ],
+        "summary": "Get Tenant Performance",
+        "description": "Get performance report for a specific tenant.",
+        "operationId": "utils-get_tenant_performance",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1271,6 +1460,598 @@
         }
       }
     },
+    "/api/v1/audit-logs/": {
+      "get": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Read Audit Logs",
+        "description": "Retrieve audit logs with filtering options.",
+        "operationId": "audit-logs-read_audit_logs",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by user ID",
+              "title": "User Id"
+            },
+            "description": "Filter by user ID"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuditAction"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by action type",
+              "title": "Action"
+            },
+            "description": "Filter by action type"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource type",
+              "title": "Resource Type"
+            },
+            "description": "Filter by resource type"
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource ID",
+              "title": "Resource Id"
+            },
+            "description": "Filter by resource ID"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuditSeverity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by severity level",
+              "title": "Severity"
+            },
+            "description": "Filter by severity level"
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by tenant ID",
+              "title": "Tenant Id"
+            },
+            "description": "Filter by tenant ID"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date for filtering",
+              "title": "Start Date"
+            },
+            "description": "Start date for filtering"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date for filtering",
+              "title": "End Date"
+            },
+            "description": "End date for filtering"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogsPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Create Audit Log",
+        "description": "Create new audit log entry.",
+        "operationId": "audit-logs-create_audit_log",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditLogCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit-logs/{audit_log_id}": {
+      "get": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Read Audit Log",
+        "description": "Get a specific audit log by id.",
+        "operationId": "audit-logs-read_audit_log",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "audit_log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Audit Log Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Update Audit Log",
+        "description": "Update an audit log entry.",
+        "operationId": "audit-logs-update_audit_log",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "audit_log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Audit Log Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditLogUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Delete Audit Log",
+        "description": "Delete an audit log entry.",
+        "operationId": "audit-logs-delete_audit_log",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "audit_log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Audit Log Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit-logs/export/csv": {
+      "get": {
+        "tags": [
+          "audit-logs"
+        ],
+        "summary": "Export Audit Logs Csv",
+        "description": "Export audit logs to CSV format.",
+        "operationId": "audit-logs-export_audit_logs_csv",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by user ID",
+              "title": "User Id"
+            },
+            "description": "Filter by user ID"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuditAction"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by action type",
+              "title": "Action"
+            },
+            "description": "Filter by action type"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource type",
+              "title": "Resource Type"
+            },
+            "description": "Filter by resource type"
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource ID",
+              "title": "Resource Id"
+            },
+            "description": "Filter by resource ID"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuditSeverity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by severity level",
+              "title": "Severity"
+            },
+            "description": "Filter by severity level"
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by tenant ID",
+              "title": "Tenant Id"
+            },
+            "description": "Filter by tenant ID"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date for filtering",
+              "title": "Start Date"
+            },
+            "description": "Start date for filtering"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date for filtering",
+              "title": "End Date"
+            },
+            "description": "End date for filtering"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogExport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/private/users/": {
       "post": {
         "tags": [
@@ -1316,6 +2097,327 @@
   },
   "components": {
     "schemas": {
+      "AuditAction": {
+        "type": "string",
+        "enum": [
+          "CREATE",
+          "UPDATE",
+          "DELETE",
+          "VIEW",
+          "SEARCH"
+        ],
+        "title": "AuditAction"
+      },
+      "AuditLogCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/AuditAction"
+          },
+          "resource_type": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Resource Id"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 45
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "before_state": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before State"
+          },
+          "after_state": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After State"
+          },
+          "custom_metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Metadata"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AuditSeverity",
+            "default": "INFO"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "tenant_id"
+        ],
+        "title": "AuditLogCreate"
+      },
+      "AuditLogExport": {
+        "properties": {
+          "csv_data": {
+            "type": "string",
+            "title": "Csv Data"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csv_data",
+          "filename"
+        ],
+        "title": "AuditLogExport"
+      },
+      "AuditLogPublic": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/AuditAction"
+          },
+          "resource_type": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Resource Id"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 45
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "before_state": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before State"
+          },
+          "after_state": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After State"
+          },
+          "custom_metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Metadata"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AuditSeverity",
+            "default": "INFO"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "tenant_id",
+          "id"
+        ],
+        "title": "AuditLogPublic"
+      },
+      "AuditLogUpdate": {
+        "properties": {
+          "custom_metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Metadata"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AuditLogUpdate"
+      },
+      "AuditLogsPublic": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogPublic"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "AuditLogsPublic"
+      },
+      "AuditSeverity": {
+        "type": "string",
+        "enum": [
+          "INFO",
+          "WARNING",
+          "ERROR",
+          "CRITICAL"
+        ],
+        "title": "AuditSeverity"
+      },
       "Body_login-login_access_token": {
         "properties": {
           "grant_type": {
@@ -1398,13 +2500,23 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 255
+                "maxLength": 1000
               },
               {
                 "type": "null"
               }
             ],
             "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -1425,13 +2537,23 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 255
+                "maxLength": 1000
               },
               {
                 "type": "null"
               }
             ],
             "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           },
           "id": {
             "type": "string",
@@ -1442,13 +2564,19 @@
             "type": "string",
             "format": "uuid",
             "title": "Owner Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
           }
         },
         "type": "object",
         "required": [
           "title",
           "id",
-          "owner_id"
+          "owner_id",
+          "tenant_id"
         ],
         "title": "ItemPublic"
       },
@@ -1471,13 +2599,23 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 255
+                "maxLength": 1000
               },
               {
                 "type": "null"
               }
             ],
             "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -1594,6 +2732,30 @@
           "status": {
             "$ref": "#/components/schemas/TenantStatus",
             "default": "active"
+          },
+          "max_users": {
+            "type": "integer",
+            "title": "Max Users",
+            "default": 100
+          },
+          "max_storage_gb": {
+            "type": "integer",
+            "title": "Max Storage Gb",
+            "default": 10
+          },
+          "features_enabled": {
+            "type": "object",
+            "title": "Features Enabled"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -1633,10 +2795,19 @@
             "$ref": "#/components/schemas/TenantStatus",
             "default": "active"
           },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
+          "max_users": {
+            "type": "integer",
+            "title": "Max Users",
+            "default": 100
+          },
+          "max_storage_gb": {
+            "type": "integer",
+            "title": "Max Storage Gb",
+            "default": 10
+          },
+          "features_enabled": {
+            "type": "object",
+            "title": "Features Enabled"
           },
           "created_at": {
             "type": "string",
@@ -1647,15 +2818,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
           }
         },
         "type": "object",
         "required": [
           "name",
           "code",
-          "id",
-          "created_at",
-          "updated_at"
+          "id"
         ],
         "title": "TenantPublic"
       },
@@ -1716,6 +2890,39 @@
                 "type": "null"
               }
             ]
+          },
+          "max_users": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Users"
+          },
+          "max_storage_gb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Storage Gb"
+          },
+          "features_enabled": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Features Enabled"
           }
         },
         "type": "object",
@@ -1812,11 +3019,44 @@
             ],
             "title": "Full Name"
           },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "user"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "login_count": {
+            "type": "integer",
+            "title": "Login Count",
+            "default": 0
+          },
           "password": {
             "type": "string",
             "maxLength": 40,
             "minLength": 8,
             "title": "Password"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
           }
         },
         "type": "object",
@@ -1856,16 +3096,43 @@
             ],
             "title": "Full Name"
           },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "user"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "login_count": {
+            "type": "integer",
+            "title": "Login Count",
+            "default": 0
+          },
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
           }
         },
         "type": "object",
         "required": [
           "email",
-          "id"
+          "id",
+          "tenant_id"
         ],
         "title": "UserPublic"
       },
@@ -1902,6 +3169,15 @@
           "password"
         ],
         "title": "UserRegister"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "auditor",
+          "user"
+        ],
+        "title": "UserRole"
       },
       "UserUpdate": {
         "properties": {
@@ -1940,6 +3216,33 @@
             ],
             "title": "Full Name"
           },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "login_count": {
+            "type": "integer",
+            "title": "Login Count",
+            "default": 0
+          },
           "password": {
             "anyOf": [
               {
@@ -1952,6 +3255,18 @@
               }
             ],
             "title": "Password"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
           }
         },
         "type": "object",

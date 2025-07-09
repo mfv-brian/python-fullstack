@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 
 import {
@@ -14,7 +14,7 @@ import {
 import { useState } from "react"
 import { FaExchangeAlt } from "react-icons/fa"
 
-import { type UserPublic, type UserUpdate, UsersService } from "@/client"
+import { type UserPublic, type UserUpdate, UsersService, TenantsService } from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "../ui/dialog"
 import { Field } from "../ui/field"
+import { NativeSelectRoot, NativeSelectField } from "../ui/native-select"
 
 interface EditUserProps {
   user: UserPublic
@@ -41,6 +42,13 @@ const EditUser = ({ user }: EditUserProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
+  
+  // Fetch tenants for the dropdown
+  const { data: tenantsData } = useQuery({
+    queryFn: () => TenantsService.readTenants({ limit: 1000 }),
+    queryKey: ["tenants"],
+  })
+
   const {
     control,
     register,
@@ -129,6 +137,60 @@ const EditUser = ({ user }: EditUserProps) => {
               </Field>
 
               <Field
+                required
+                invalid={!!errors.tenant_id}
+                errorText={errors.tenant_id?.message}
+                label="Tenant"
+              >
+                <Controller
+                  control={control}
+                  name="tenant_id"
+                  rules={{ required: "Tenant is required" }}
+                  render={({ field }) => (
+                    <NativeSelectRoot>
+                      <NativeSelectField
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <option value="">Select a tenant</option>
+                        {tenantsData?.data.map((tenant) => (
+                          <option key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </option>
+                        ))}
+                      </NativeSelectField>
+                    </NativeSelectRoot>
+                  )}
+                />
+              </Field>
+
+              <Field
+                required
+                invalid={!!errors.role}
+                errorText={errors.role?.message}
+                label="Role"
+              >
+                <Controller
+                  control={control}
+                  name="role"
+                  rules={{ required: "Role is required" }}
+                  render={({ field }) => (
+                    <NativeSelectRoot>
+                      <NativeSelectField
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <option value="">Select a role</option>
+                        <option value="user">User</option>
+                        <option value="auditor">Auditor</option>
+                        <option value="admin">Admin</option>
+                      </NativeSelectField>
+                    </NativeSelectRoot>
+                  )}
+                />
+              </Field>
+
+              <Field
                 invalid={!!errors.password}
                 errorText={errors.password?.message}
                 label="Set Password"
@@ -165,20 +227,6 @@ const EditUser = ({ user }: EditUserProps) => {
             </VStack>
 
             <Flex mt={4} direction="column" gap={4}>
-              <Controller
-                control={control}
-                name="is_superuser"
-                render={({ field }) => (
-                  <Field disabled={field.disabled} colorPalette="teal">
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={({ checked }) => field.onChange(checked)}
-                    >
-                      Is superuser?
-                    </Checkbox>
-                  </Field>
-                )}
-              />
               <Controller
                 control={control}
                 name="is_active"
