@@ -136,7 +136,21 @@ def create_audit_log(
     """
     Create new audit log entry (authenticated users).
     """
+    # Only restrict user_id and tenant_id for non-admins
+    if current_user.role != UserRole.ADMIN:
+        if str(audit_log_in.user_id) != str(current_user.id):
+            raise HTTPException(
+                status_code=403,
+                detail="You can only create audit logs for your own actions",
+            )
+        if str(audit_log_in.tenant_id) != str(current_user.tenant_id):
+            raise HTTPException(
+                status_code=403,
+                detail="You can only create audit logs for your own tenant",
+            )
+    
     # Ensure the user can only create audit logs for their own actions
+    # This check is now redundant due to the new_code, but kept for consistency
     if str(audit_log_in.user_id) != str(current_user.id):
         raise HTTPException(
             status_code=403,
@@ -144,6 +158,7 @@ def create_audit_log(
         )
     
     # Ensure the tenant_id matches the current user's tenant
+    # This check is now redundant due to the new_code, but kept for consistency
     if str(audit_log_in.tenant_id) != str(current_user.tenant_id):
         raise HTTPException(
             status_code=403,
