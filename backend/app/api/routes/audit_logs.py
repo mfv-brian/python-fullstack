@@ -24,6 +24,7 @@ from app.models import (
     AuditLogUpdate,
     AuditSeverity,
     Message,
+    UserRole,
 )
 
 router = APIRouter(prefix="/audit-logs", tags=["audit-logs"])
@@ -53,8 +54,8 @@ def read_audit_logs(
     # Build the base query
     statement = select(AuditLog)
     
-    # For non-superusers, only show logs from their own tenant
-    if not current_user.is_superuser:
+    # For non-admin users, only show logs from their own tenant
+    if current_user.role != UserRole.ADMIN:
         statement = statement.where(col(AuditLog.tenant_id) == current_user.tenant_id)
     
     # Add filters
@@ -69,8 +70,8 @@ def read_audit_logs(
     if severity:
         statement = statement.where(col(AuditLog.severity) == severity)
     if tenant_id:
-        # For non-superusers, ensure they can only filter by their own tenant
-        if not current_user.is_superuser and tenant_id != current_user.tenant_id:
+        # For non-admin users, ensure they can only filter by their own tenant
+        if current_user.role != UserRole.ADMIN and tenant_id != current_user.tenant_id:
             raise HTTPException(
                 status_code=403,
                 detail="You can only view audit logs from your own tenant",
@@ -86,7 +87,7 @@ def read_audit_logs(
     
     # Get count
     count_statement = select(func.count()).select_from(AuditLog)
-    if not current_user.is_superuser:
+    if current_user.role != UserRole.ADMIN:
         count_statement = count_statement.where(col(AuditLog.tenant_id) == current_user.tenant_id)
     if user_id:
         count_statement = count_statement.where(col(AuditLog.user_id) == user_id)
@@ -99,7 +100,7 @@ def read_audit_logs(
     if severity:
         count_statement = count_statement.where(col(AuditLog.severity) == severity)
     if tenant_id:
-        if not current_user.is_superuser and tenant_id != current_user.tenant_id:
+        if current_user.role != UserRole.ADMIN and tenant_id != current_user.tenant_id:
             raise HTTPException(
                 status_code=403,
                 detail="You can only view audit logs from your own tenant",
@@ -364,6 +365,14 @@ def create_audit_log_entry(
     """
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
+    
+    # If tenant_id is not provided, get it from the user
+    if tenant_id is None:
+        from app.models import User
+        user = session.get(User, user_id)
+        if user is None:
+            raise ValueError(f"User with id {user_id} not found")
+        tenant_id = user.tenant_id
     
     audit_log = AuditLog(
         user_id=user_id,

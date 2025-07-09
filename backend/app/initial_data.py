@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from app.core.db import engine, init_db
 from app.core.config import settings
 from app import crud
-from app.models import TenantCreate, UserCreate, User
+from app.models import TenantCreate, UserCreate, User, UserRole
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,11 +43,33 @@ def init() -> None:
         user_in = UserCreate(
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
-            is_superuser=True,
+            role=UserRole.ADMIN,
             tenant_id=default_tenant.id
         )
         user = crud.create_user(session=session, user_create=user_in)
         logger.info(f"Created superuser: {user.email}")
+        
+        # Create or update admin@example.com user
+        admin_user = session.exec(
+            select(User).where(User.email == "admin@example.com")
+        ).first()
+        if admin_user:
+            # Update existing admin user to have ADMIN role
+            admin_user.role = UserRole.ADMIN
+            session.add(admin_user)
+            session.commit()
+            logger.info(f"Updated existing admin user: {admin_user.email}")
+        else:
+            # Create new admin user
+            admin_user_in = UserCreate(
+                email="admin@example.com",
+                password="admin123",  # You should change this password
+                role=UserRole.ADMIN,
+                tenant_id=default_tenant.id,
+                full_name="System Administrator"
+            )
+            admin_user = crud.create_user(session=session, user_create=admin_user_in)
+            logger.info(f"Created admin user: {admin_user.email}")
         
         # Call the original init_db function
         init_db(session)
@@ -107,7 +129,7 @@ def init() -> None:
                     email="john.doe@acme.com",
                     password="password123",
                     full_name="John Doe",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant1.id
                 )
             )
@@ -121,7 +143,7 @@ def init() -> None:
                     email="jane.smith@acme.com",
                     password="password123",
                     full_name="Jane Smith",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant1.id
                 )
             )
@@ -136,7 +158,7 @@ def init() -> None:
                     email="bob.wilson@techco.com",
                     password="password123",
                     full_name="Bob Wilson",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant2.id
                 )
             )
@@ -150,7 +172,7 @@ def init() -> None:
                     email="alice.brown@techco.com",
                     password="password123",
                     full_name="Alice Brown",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant2.id
                 )
             )
@@ -165,7 +187,7 @@ def init() -> None:
                     email="mike.jones@startup.com",
                     password="password123",
                     full_name="Mike Jones",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant3.id
                 )
             )
@@ -179,7 +201,7 @@ def init() -> None:
                     email="sarah.davis@startup.com",
                     password="password123",
                     full_name="Sarah Davis",
-                    is_superuser=False,
+                    role=UserRole.USER,
                     tenant_id=tenant3.id
                 )
             )

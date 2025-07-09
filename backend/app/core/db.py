@@ -118,7 +118,6 @@ def init_db(session: Session) -> None:
         user_in = UserCreate(
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
-            is_superuser=True,
             role=UserRole.ADMIN,
             tenant_id=default_tenant.id,
             full_name="System Administrator"

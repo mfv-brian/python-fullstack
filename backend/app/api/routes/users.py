@@ -43,13 +43,13 @@ def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, li
     # Build the base query
     statement = select(User)
     
-    # For non-superusers, only show users from their own tenant
-    if not current_user.is_superuser:
+    # For non-admin users, only show users from their own tenant
+    if current_user.role != UserRole.ADMIN:
         statement = statement.where(col(User.tenant_id) == current_user.tenant_id)
     
     # Get count
     count_statement = select(func.count()).select_from(User)
-    if not current_user.is_superuser:
+    if current_user.role != UserRole.ADMIN:
         count_statement = count_statement.where(col(User.tenant_id) == current_user.tenant_id)
     
     count = session.exec(count_statement).one()
@@ -76,8 +76,8 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Curre
             detail="The user with this email already exists in the system.",
         )
 
-    # Non-superusers can only create users in their own tenant
-    if not current_user.is_superuser and user_in.tenant_id and user_in.tenant_id != current_user.tenant_id:
+    # Non-admin users can only create users in their own tenant
+    if current_user.role != UserRole.ADMIN and user_in.tenant_id and user_in.tenant_id != current_user.tenant_id:
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to create users in other tenants",
@@ -155,9 +155,9 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
     """
-    if current_user.is_superuser:
+    if current_user.role == UserRole.ADMIN:
         raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
+            status_code=403, detail="Admin users are not allowed to delete themselves"
         )
     session.delete(current_user)
     session.commit()
@@ -209,7 +209,7 @@ def read_user_by_id(
     user = session.get(User, user_id)
     if user == current_user:
         return user
-    if not current_user.is_superuser:
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",
@@ -239,8 +239,8 @@ def update_user(
             detail="The user with this id does not exist in the system",
         )
     
-    # Check permissions - only superusers can update users from other tenants
-    if not current_user.is_superuser and db_user.tenant_id != current_user.tenant_id:
+    # Check permissions - only admin users can update users from other tenants
+    if current_user.role != UserRole.ADMIN and db_user.tenant_id != current_user.tenant_id:
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to update users from other tenants",
@@ -253,8 +253,8 @@ def update_user(
                 status_code=409, detail="User with this email already exists"
             )
 
-    # Non-superusers cannot change tenant_id
-    if not current_user.is_superuser and user_in.tenant_id and user_in.tenant_id != db_user.tenant_id:
+    # Non-admin users cannot change tenant_id
+    if current_user.role != UserRole.ADMIN and user_in.tenant_id and user_in.tenant_id != db_user.tenant_id:
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to change a user's tenant",
@@ -275,8 +275,8 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check permissions - only superusers can delete users from other tenants
-    if not current_user.is_superuser and user.tenant_id != current_user.tenant_id:
+    # Check permissions - only admin users can delete users from other tenants
+    if current_user.role != UserRole.ADMIN and user.tenant_id != current_user.tenant_id:
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to delete users from other tenants",

@@ -16,6 +16,7 @@ from app.models import (
     TenantPublic,
     TenantsPublic,
     TenantUpdate,
+    UserRole,
 )
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
@@ -39,8 +40,8 @@ def read_tenants(
     # Build the base query
     statement = select(Tenant)
     
-    # For non-superusers, only show their own tenant
-    if not current_user.is_superuser:
+    # For non-admin users, only show their own tenant
+    if current_user.role != UserRole.ADMIN:
         statement = statement.where(col(Tenant.id) == current_user.tenant_id)
     
     # Add search filter if provided
@@ -57,7 +58,7 @@ def read_tenants(
     
     # Get count
     count_statement = select(func.count()).select_from(Tenant)
-    if not current_user.is_superuser:
+    if current_user.role != UserRole.ADMIN:
         count_statement = count_statement.where(col(Tenant.id) == current_user.tenant_id)
     if search:
         count_statement = count_statement.where(search_filter)

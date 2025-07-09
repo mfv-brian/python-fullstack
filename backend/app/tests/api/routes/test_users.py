@@ -20,6 +20,7 @@ def test_get_users_superuser_me(
     assert current_user
     assert current_user["is_active"] is True
     assert current_user["is_superuser"]
+    assert current_user["role"] == "admin"
     assert current_user["email"] == settings.FIRST_SUPERUSER
 
 
@@ -31,6 +32,7 @@ def test_get_users_normal_user_me(
     assert current_user
     assert current_user["is_active"] is True
     assert current_user["is_superuser"] is False
+    assert current_user["role"] == "user"
     assert current_user["email"] == settings.EMAIL_TEST_USER
 
 
