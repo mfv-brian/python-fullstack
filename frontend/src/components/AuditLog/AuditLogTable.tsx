@@ -11,10 +11,12 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { useState } from "react"
-import { FiDownload, FiEye, FiSearch } from "react-icons/fi"
+import { FiDownload, FiEye, FiSearch, FiPlus } from "react-icons/fi"
 
 import type { AuditAction, AuditSeverity } from "../../client/types.gen"
 import { useAuditLogs } from "../../hooks/useAuditLogs"
+import { useAuditLogger, createUserAuditLog } from "../../utils/auditLog"
+import useAuth from "../../hooks/useAuth"
 import {
   PaginationItems,
   PaginationNextTrigger,
@@ -22,6 +24,7 @@ import {
   PaginationRoot,
 } from "../ui/pagination"
 import { SkeletonText } from "../ui/skeleton"
+import { Button } from "../ui/button"
 import AuditLogDetails from "./AuditLogDetails"
 import AuditLogExport from "./AuditLogExport"
 import AuditLogFilters from "./AuditLogFilters"
@@ -65,9 +68,17 @@ function AuditLogTable() {
   const [filters, setFilters] = useState<AuditLogFilterOptions>({})
   const [selectedLog, setSelectedLog] = useState<any>(null)
   const [showExport, setShowExport] = useState(false)
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
 
   const { data, isLoading, isPlaceholderData, error } = useAuditLogs(page, filters)
 
+  // Temporarily disable audit logs fetch to test
+  // const { data, isLoading, isPlaceholderData, error } = useAuditLogs(page, filters)
+  // const logs = data?.data.slice(0, PER_PAGE) ?? []
+  // const count = data?.count ?? 0
+  
+  // Temporary mock data
   const logs = data?.data.slice(0, PER_PAGE) ?? []
   const count = data?.count ?? 0
 
@@ -79,6 +90,47 @@ function AuditLogTable() {
   const handleFiltersReset = () => {
     setFilters({})
     setPage(1)
+  }
+
+  const handleTestAuditLog = async () => {
+    if (currentUser) {
+      console.log("Current user:", currentUser)
+      console.log("Testing audit log creation...")
+      
+      try {
+        const auditData = createUserAuditLog(
+          "CREATE",
+          "test-user-id",
+          currentUser.tenant_id,
+          currentUser.id,
+          undefined,
+          {
+            test_field: "test_value",
+            timestamp: new Date().toISOString(),
+          },
+          "INFO"
+        )
+        console.log("Audit data created:", auditData)
+        await logAction(auditData)
+        console.log("Audit log test completed successfully")
+      } catch (error) {
+        console.error("Audit log test failed:", error)
+      }
+    } else {
+      console.error("No current user found")
+    }
+  }
+
+  const handleTestSimpleAction = async () => {
+    console.log("Testing simple action without audit log...")
+    // This will help us determine if the issue is with audit logs or something else
+    try {
+      // Simulate a simple action
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log("Simple action completed successfully")
+    } catch (error) {
+      console.error("Simple action failed:", error)
+    }
   }
 
   if (error) {
@@ -180,6 +232,24 @@ function AuditLogTable() {
           Showing {logs.length} of {count} logs
         </Text>
         <HStack>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleTestSimpleAction}
+            aria-label="Test simple action"
+          >
+            <FiPlus />
+            Test Simple
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleTestAuditLog}
+            aria-label="Test audit log"
+          >
+            <FiPlus />
+            Test Log
+          </Button>
           <AuditLogExport
             isOpen={showExport}
             onClose={() => setShowExport(false)}

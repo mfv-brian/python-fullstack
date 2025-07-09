@@ -31,39 +31,55 @@ export const useAuditLogs = (page: number, filters?: AuditLogFilterOptions) => {
   return useQuery({
     queryKey: ["auditLogs", { page, filters }],
     queryFn: async () => {
-      const skip = (page - 1) * PER_PAGE
-      
-      // Convert frontend filters to API parameters
-      const apiParams: any = {
-        skip,
-        limit: PER_PAGE,
-      }
-      
-      if (filters?.action) apiParams.action = filters.action
-      if (filters?.severity) apiParams.severity = filters.severity
-      if (filters?.resource_type) apiParams.resourceType = filters.resource_type
-      if (filters?.resource_id) apiParams.resourceId = filters.resource_id
-      if (filters?.user_id) apiParams.userId = filters.user_id
-      if (filters?.tenant_id) apiParams.tenantId = filters.tenant_id
-      if (filters?.start_date) apiParams.startDate = filters.start_date
-      if (filters?.end_date) apiParams.endDate = filters.end_date
-      
-      const response = await AuditLogsService.readAuditLogs(apiParams)
-      
-      // Transform API response to include user information and messages
-      const extendedData = response.data.map((log): ExtendedAuditLog => ({
-        ...log,
-        user_name: `User ${log.user_id.slice(0, 8)}`, // Mock user name - in real app, you'd fetch user details
-        user_email: `user-${log.user_id.slice(0, 8)}@example.com`, // Mock email
-        message: `${log.action} operation on ${log.resource_type} ${log.resource_id}`,
-        severity: log.severity || "INFO",
-        action: log.action,
-        timestamp: log.timestamp || new Date().toISOString(),
-      }))
-      
-      return {
-        data: extendedData,
-        count: response.count,
+      try {
+        console.log("Fetching audit logs with params:", { page, filters })
+        
+        const skip = (page - 1) * PER_PAGE
+        
+        // Convert frontend filters to API parameters
+        const apiParams: any = {
+          skip,
+          limit: PER_PAGE,
+        }
+        
+        if (filters?.action) apiParams.action = filters.action
+        if (filters?.severity) apiParams.severity = filters.severity
+        if (filters?.resource_type) apiParams.resourceType = filters.resource_type
+        if (filters?.resource_id) apiParams.resourceId = filters.resource_id
+        if (filters?.user_id) apiParams.userId = filters.user_id
+        if (filters?.tenant_id) apiParams.tenantId = filters.tenant_id
+        if (filters?.start_date) apiParams.startDate = filters.start_date
+        if (filters?.end_date) apiParams.endDate = filters.end_date
+        
+        console.log("API params:", apiParams)
+        
+        const response = await AuditLogsService.readAuditLogs(apiParams)
+        
+        console.log("Audit logs response:", response)
+        
+        // Transform API response to include user information and messages
+        const extendedData = response.data.map((log): ExtendedAuditLog => ({
+          ...log,
+          user_name: `User ${log.user_id.slice(0, 8)}`, // Mock user name - in real app, you'd fetch user details
+          user_email: `user-${log.user_id.slice(0, 8)}@example.com`, // Mock email
+          message: `${log.action} operation on ${log.resource_type} ${log.resource_id}`,
+          severity: log.severity || "INFO",
+          action: log.action,
+          timestamp: log.timestamp || new Date().toISOString(),
+        }))
+        
+        return {
+          data: extendedData,
+          count: response.count,
+        }
+      } catch (error) {
+        console.error("Error fetching audit logs:", error)
+        console.error("Error details:", {
+          message: error instanceof Error ? error.message : "Unknown error",
+          status: error instanceof Error && 'status' in error ? (error as any).status : "Unknown",
+          data: error instanceof Error && 'data' in error ? (error as any).data : "Unknown",
+        })
+        throw error
       }
     },
     placeholderData: (prevData) => prevData,
@@ -163,6 +179,21 @@ export const useCreateAuditLog = () => {
   
   return useMutation({
     mutationFn: async (auditLogData: any) => {
+      return await AuditLogsService.createAuditLog({ requestBody: auditLogData })
+    },
+    onSuccess: () => {
+      // Invalidate and refetch audit logs
+      queryClient.invalidateQueries({ queryKey: ["auditLogs"] })
+    },
+  })
+}
+
+export const useCreateUserAuditLog = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (auditLogData: any) => {
+      // Use the regular createAuditLog endpoint - the backend will handle authentication
       return await AuditLogsService.createAuditLog({ requestBody: auditLogData })
     },
     onSuccess: () => {

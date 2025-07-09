@@ -13,6 +13,8 @@ import {
   DialogRoot,
 } from "../ui/dialog"
 import useCustomToast from "../../hooks/useCustomToast"
+import { useAuditLogger, createTenantAuditLog } from "../../utils/auditLog"
+import useAuth from "../../hooks/useAuth"
 
 interface DeleteTenantProps {
   tenant: TenantPublic
@@ -23,6 +25,8 @@ interface DeleteTenantProps {
 const DeleteTenant = ({ tenant, isOpen, onClose }: DeleteTenantProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   const {
     handleSubmit,
     formState: { isSubmitting },
@@ -34,8 +38,29 @@ const DeleteTenant = ({ tenant, isOpen, onClose }: DeleteTenantProps) => {
 
   const mutation = useMutation({
     mutationFn: deleteTenant,
-    onSuccess: () => {
+    onSuccess: async () => {
       showSuccessToast("The tenant was deleted successfully")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createTenantAuditLog(
+          "DELETE",
+          tenant.id,
+          currentUser.id,
+          {
+            name: tenant.name,
+            code: tenant.code,
+            description: tenant.description,
+            status: tenant.status,
+            max_users: tenant.max_users,
+            max_storage_gb: tenant.max_storage_gb,
+          },
+          undefined, // No after state for deletion
+          "WARNING"
+        )
+        await logAction(auditData)
+      }
+      
       onClose()
     },
     onError: () => {

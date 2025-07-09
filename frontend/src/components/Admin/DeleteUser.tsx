@@ -16,11 +16,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useAuditLogger, createUserAuditLog } from "@/utils/auditLog"
+import useAuth from "@/hooks/useAuth"
 
 const DeleteUser = ({ id }: { id: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   const {
     handleSubmit,
     formState: { isSubmitting },
@@ -32,8 +36,27 @@ const DeleteUser = ({ id }: { id: string }) => {
 
   const mutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => {
+    onSuccess: async () => {
       showSuccessToast("The user was deleted successfully")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createUserAuditLog(
+          "DELETE",
+          id,
+          currentUser.tenant_id, // Use current user's tenant as fallback
+          currentUser.id,
+          {
+            // We don't have the user data after deletion, so we log minimal info
+            user_id: id,
+            action: "DELETE",
+          },
+          undefined, // No after state for deletion
+          "WARNING"
+        )
+        await logAction(auditData)
+      }
+      
       setIsOpen(false)
     },
     onError: () => {

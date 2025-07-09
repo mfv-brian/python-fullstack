@@ -16,6 +16,8 @@ import { type TenantCreate, TenantsService } from "../../client"
 import type { ApiError } from "../../client/core/ApiError"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
+import { useAuditLogger, createTenantAuditLog } from "../../utils/auditLog"
+import useAuth from "../../hooks/useAuth"
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -32,6 +34,8 @@ const AddTenant = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   const {
     register,
     handleSubmit,
@@ -51,8 +55,29 @@ const AddTenant = () => {
   const mutation = useMutation({
     mutationFn: (data: TenantCreate) =>
       TenantsService.createTenant({ requestBody: data }),
-    onSuccess: () => {
+    onSuccess: async (createdTenant) => {
       showSuccessToast("Tenant created successfully.")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createTenantAuditLog(
+          "CREATE",
+          createdTenant.id,
+          currentUser.id,
+          undefined, // No before state for creation
+          {
+            name: createdTenant.name,
+            code: createdTenant.code,
+            description: createdTenant.description,
+            status: createdTenant.status,
+            max_users: createdTenant.max_users,
+            max_storage_gb: createdTenant.max_storage_gb,
+          },
+          "INFO"
+        )
+        await logAction(auditData)
+      }
+      
       reset()
       setIsOpen(false)
     },
