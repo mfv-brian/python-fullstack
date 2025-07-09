@@ -51,7 +51,7 @@ def test_check_if_user_is_active_inactive(db: Session) -> None:
     tenant = get_or_create_default_tenant(db)
     user_in = UserCreate(email=email, password=password, tenant_id=tenant.id, is_active=False)
     user = crud.create_user(session=db, user_create=user_in)
-    assert user.is_active
+    assert user.is_active is False
 
 
 def test_check_if_user_is_admin(db: Session) -> None:

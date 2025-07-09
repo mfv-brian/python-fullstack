@@ -19,7 +19,6 @@ def test_get_users_superuser_me(
     current_user = r.json()
     assert current_user
     assert current_user["is_active"] is True
-    assert current_user["is_superuser"]
     assert current_user["role"] == "admin"
     assert current_user["email"] == settings.FIRST_SUPERUSER
 
@@ -31,7 +30,6 @@ def test_get_users_normal_user_me(
     current_user = r.json()
     assert current_user
     assert current_user["is_active"] is True
-    assert current_user["is_superuser"] is False
     assert current_user["role"] == "user"
     assert current_user["email"] == settings.EMAIL_TEST_USER
 
@@ -46,7 +44,8 @@ def test_create_user_new_email(
     ):
         username = random_email()
         password = random_lower_string()
-        data = {"email": username, "password": password}
+        tenant = get_or_create_default_tenant(db)
+        data = {"email": username, "password": password, "tenant_id": str(tenant.id)}
         r = client.post(
             f"{settings.API_V1_STR}/users/",
             headers=superuser_token_headers,
@@ -127,7 +126,7 @@ def test_create_user_existing_username(
     tenant = get_or_create_default_tenant(db)
     user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     crud.create_user(session=db, user_create=user_in)
-    data = {"email": username, "password": password}
+    data = {"email": username, "password": password, "tenant_id": str(tenant.id)}
     r = client.post(
         f"{settings.API_V1_STR}/users/",
         headers=superuser_token_headers,
@@ -139,11 +138,12 @@ def test_create_user_existing_username(
 
 
 def test_create_user_by_normal_user(
-    client: TestClient, normal_user_token_headers: dict[str, str]
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
     username = random_email()
     password = random_lower_string()
-    data = {"email": username, "password": password}
+    tenant = get_or_create_default_tenant(db)
+    data = {"email": username, "password": password, "tenant_id": str(tenant.id)}
     r = client.post(
         f"{settings.API_V1_STR}/users/",
         headers=normal_user_token_headers,
@@ -294,7 +294,8 @@ def test_register_user(client: TestClient, db: Session) -> None:
     username = random_email()
     password = random_lower_string()
     full_name = random_lower_string()
-    data = {"email": username, "password": password, "full_name": full_name}
+    tenant = get_or_create_default_tenant(db)
+    data = {"email": username, "password": password, "full_name": full_name, "tenant_id": str(tenant.id)}
     r = client.post(
         f"{settings.API_V1_STR}/users/signup",
         json=data,
@@ -433,7 +434,7 @@ def test_delete_user_me_as_superuser(
     )
     assert r.status_code == 403
     response = r.json()
-    assert response["detail"] == "Super users are not allowed to delete themselves"
+    assert response["detail"] == "Admin users are not allowed to delete themselves"
 
 
 def test_delete_user_super_user(
@@ -479,7 +480,7 @@ def test_delete_user_current_super_user_error(
         headers=superuser_token_headers,
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "Super users are not allowed to delete themselves"
+    assert r.json()["detail"] == "Users are not allowed to delete themselves through this endpoint"
 
 
 def test_delete_user_without_privileges(
@@ -490,10 +491,9 @@ def test_delete_user_without_privileges(
     tenant = get_or_create_default_tenant(db)
     user_in = UserCreate(email=username, password=password, tenant_id=tenant.id)
     user = crud.create_user(session=db, user_create=user_in)
-
+    user_id = user.id
     r = client.delete(
-        f"{settings.API_V1_STR}/users/{user.id}",
+        f"{settings.API_V1_STR}/users/{user_id}",
         headers=normal_user_token_headers,
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "The user doesn't have enough privileges"

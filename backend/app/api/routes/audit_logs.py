@@ -149,22 +149,6 @@ def create_audit_log(
                 detail="You can only create audit logs for your own tenant",
             )
     
-    # Ensure the user can only create audit logs for their own actions
-    # This check is now redundant due to the new_code, but kept for consistency
-    if str(audit_log_in.user_id) != str(current_user.id):
-        raise HTTPException(
-            status_code=403,
-            detail="You can only create audit logs for your own actions",
-        )
-    
-    # Ensure the tenant_id matches the current user's tenant
-    # This check is now redundant due to the new_code, but kept for consistency
-    if str(audit_log_in.tenant_id) != str(current_user.tenant_id):
-        raise HTTPException(
-            status_code=403,
-            detail="You can only create audit logs for your own tenant",
-        )
-    
     # Get client IP and user agent
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")

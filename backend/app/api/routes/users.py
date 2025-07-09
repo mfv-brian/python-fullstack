@@ -63,6 +63,7 @@ def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, li
 
 @router.post(
     "/", 
+    dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
 def create_user(*, session: SessionDep, user_in: UserCreate, current_user: CurrentUser) -> Any:
@@ -175,7 +176,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
             status_code=400,
             detail="The user with this email already exists in the system",
         )
-    user_create = UserCreate.model_validate(user_in)
+    
     # For signup, create a default tenant or use existing one
     tenant = crud.get_tenant_by_code(session=session, code="default")
     if not tenant:
@@ -194,7 +195,15 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
             }
         )
         tenant = crud.create_tenant(session=session, tenant_create=tenant_create)
-    user_create.tenant_id = tenant.id
+    
+    # Create UserCreate with tenant_id
+    user_create = UserCreate(
+        email=user_in.email,
+        password=user_in.password,
+        full_name=user_in.full_name,
+        tenant_id=tenant.id
+    )
+    
     user = crud.create_user(session=session, user_create=user_create)
     return user
 
@@ -264,7 +273,7 @@ def update_user(
     return db_user
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:

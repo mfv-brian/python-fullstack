@@ -24,7 +24,8 @@ def init() -> None:
                     description="Default tenant for superuser",
                     code=default_tenant_code,
                     status="active"
-                )
+                ),
+                user_id=None  # No user_id for initial data creation
             )
             logger.info(f"Created default tenant: {default_tenant.name}")
         # Always ensure default_tenant is set
@@ -87,7 +88,8 @@ def init() -> None:
                     description="A leading technology company",
                     code="ACME",
                     status="active"
-                )
+                ),
+                user_id=admin_user.id if admin_user else None
             )
             logger.info(f"Created tenant: {tenant1.name}")
         
@@ -100,7 +102,8 @@ def init() -> None:
                     description="Innovative software solutions provider",
                     code="TECHCO",
                     status="active"
-                )
+                ),
+                user_id=admin_user.id if admin_user else None
             )
             logger.info(f"Created tenant: {tenant2.name}")
         
@@ -110,109 +113,68 @@ def init() -> None:
                 session=session,
                 tenant_create=TenantCreate(
                     name="Startup Inc",
-                    description="A growing startup company",
+                    description="A fast-growing startup company",
                     code="STARTUP",
                     status="active"
-                )
+                ),
+                user_id=admin_user.id if admin_user else None
             )
             logger.info(f"Created tenant: {tenant3.name}")
         
         # Create sample users
         logger.info("Creating sample users")
         
-        # Sample users for ACME
-        user1 = crud.get_user_by_email(session=session, email="john.doe@acme.com")
-        if not user1:
-            user1 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="john.doe@acme.com",
-                    password="password123",
-                    full_name="John Doe",
-                    role=UserRole.USER,
-                    tenant_id=tenant1.id
-                )
-            )
-            logger.info(f"Created user: {user1.full_name}")
+        # Create users for different tenants
+        users_data = [
+            {
+                "email": "john.doe@acme.com",
+                "password": "password123",
+                "full_name": "John Doe",
+                "tenant_id": tenant1.id if tenant1 else default_tenant.id
+            },
+            {
+                "email": "jane.smith@techco.com",
+                "password": "password123",
+                "full_name": "Jane Smith",
+                "tenant_id": tenant2.id if tenant2 else default_tenant.id
+            },
+            {
+                "email": "bob.wilson@startup.com",
+                "password": "password123",
+                "full_name": "Bob Wilson",
+                "tenant_id": tenant3.id if tenant3 else default_tenant.id
+            },
+            {
+                "email": "alice.brown@acme.com",
+                "password": "password123",
+                "full_name": "Alice Brown",
+                "tenant_id": tenant1.id if tenant1 else default_tenant.id
+            },
+            {
+                "email": "mike.jones@techco.com",
+                "password": "password123",
+                "full_name": "Mike Jones",
+                "tenant_id": tenant2.id if tenant2 else default_tenant.id
+            },
+            {
+                "email": "sarah.davis@startup.com",
+                "password": "password123",
+                "full_name": "Sarah Davis",
+                "tenant_id": tenant3.id if tenant3 else default_tenant.id
+            }
+        ]
         
-        user2 = crud.get_user_by_email(session=session, email="jane.smith@acme.com")
-        if not user2:
-            user2 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="jane.smith@acme.com",
-                    password="password123",
-                    full_name="Jane Smith",
-                    role=UserRole.USER,
-                    tenant_id=tenant1.id
-                )
-            )
-            logger.info(f"Created user: {user2.full_name}")
+        for user_data in users_data:
+            existing_user = session.exec(
+                select(User).where(User.email == user_data["email"])
+            ).first()
+            if not existing_user:
+                user_in = UserCreate(**user_data)
+                user = crud.create_user(session=session, user_create=user_in)
+                logger.info(f"Created user: {user.full_name}")
         
-        # Sample users for TECHCO
-        user3 = crud.get_user_by_email(session=session, email="bob.wilson@techco.com")
-        if not user3:
-            user3 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="bob.wilson@techco.com",
-                    password="password123",
-                    full_name="Bob Wilson",
-                    role=UserRole.USER,
-                    tenant_id=tenant2.id
-                )
-            )
-            logger.info(f"Created user: {user3.full_name}")
-        
-        user4 = crud.get_user_by_email(session=session, email="alice.brown@techco.com")
-        if not user4:
-            user4 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="alice.brown@techco.com",
-                    password="password123",
-                    full_name="Alice Brown",
-                    role=UserRole.USER,
-                    tenant_id=tenant2.id
-                )
-            )
-            logger.info(f"Created user: {user4.full_name}")
-        
-        # Sample users for STARTUP
-        user5 = crud.get_user_by_email(session=session, email="mike.jones@startup.com")
-        if not user5:
-            user5 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="mike.jones@startup.com",
-                    password="password123",
-                    full_name="Mike Jones",
-                    role=UserRole.USER,
-                    tenant_id=tenant3.id
-                )
-            )
-            logger.info(f"Created user: {user5.full_name}")
-        
-        user6 = crud.get_user_by_email(session=session, email="sarah.davis@startup.com")
-        if not user6:
-            user6 = crud.create_user(
-                session=session,
-                user_create=UserCreate(
-                    email="sarah.davis@startup.com",
-                    password="password123",
-                    full_name="Sarah Davis",
-                    role=UserRole.USER,
-                    tenant_id=tenant3.id
-                )
-            )
-            logger.info(f"Created user: {user6.full_name}")
-
-
-def main() -> None:
-    logger.info("Creating initial data")
-    init()
-    logger.info("Initial data created")
+        logger.info("Initial data created")
 
 
 if __name__ == "__main__":
-    main()
+    init()

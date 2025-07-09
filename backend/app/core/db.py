@@ -103,10 +103,7 @@ def init_db(session: Session) -> None:
                 "item_management": True
             }
         )
-        default_tenant = Tenant.model_validate(tenant_in)
-        session.add(default_tenant)
-        session.commit()
-        session.refresh(default_tenant)
+        default_tenant = crud.create_tenant(session=session, tenant_create=tenant_in, user_id=None)
         logger.info(f"Created default tenant: {default_tenant.id}")
 
     # Create superuser if it doesn't exist

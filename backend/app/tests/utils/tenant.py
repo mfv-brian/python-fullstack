@@ -21,7 +21,7 @@ def create_random_tenant(db: Session) -> Tenant:
             "item_management": True
         }
     )
-    tenant = crud.create_tenant(session=db, tenant_create=tenant_in)
+    tenant = crud.create_tenant(session=db, tenant_create=tenant_in, user_id=None)
     return tenant
 
 
@@ -41,5 +41,5 @@ def get_or_create_default_tenant(db: Session) -> Tenant:
                 "item_management": True
             }
         )
-        tenant = crud.create_tenant(session=db, tenant_create=tenant_in)
+        tenant = crud.create_tenant(session=db, tenant_create=tenant_in, user_id=None)
     return tenant 

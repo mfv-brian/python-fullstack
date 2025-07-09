@@ -97,7 +97,6 @@ class TenantsPublic(SQLModel):
 class UserBase(SQLModel):
     email: EmailStr = Field(max_length=255)
     is_active: bool = Field(default=True, index=True)
-    is_superuser: bool = Field(default=False, index=True)
     full_name: str | None = Field(default=None, max_length=255, index=True)
     role: UserRole = Field(default=UserRole.USER, index=True)
     # Performance tracking
@@ -114,6 +113,7 @@ class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=40)
     full_name: str | None = Field(default=None, max_length=255)
+    tenant_id: uuid.UUID | None = Field(default=None)
 
 
 class UserUpdate(UserBase):

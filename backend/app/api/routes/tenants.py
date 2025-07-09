@@ -1,9 +1,10 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlmodel import col, delete, func, select
 
+from app import crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
@@ -81,14 +82,12 @@ def read_tenants(
     dependencies=[Depends(get_current_active_superuser)],
     response_model=TenantPublic,
 )
-def create_tenant(*, session: SessionDep, tenant_in: TenantCreate) -> Any:
+def create_tenant(*, session: SessionDep, tenant_in: TenantCreate, request: Request, current_user: CurrentUser) -> Any:
     """
     Create new tenant.
     """
     # Check if tenant with same code already exists
-    existing_tenant = session.exec(
-        select(Tenant).where(col(Tenant.code) == tenant_in.code)
-    ).first()
+    existing_tenant = crud.get_tenant_by_code(session=session, code=tenant_in.code)
     
     if existing_tenant:
         raise HTTPException(
@@ -96,10 +95,7 @@ def create_tenant(*, session: SessionDep, tenant_in: TenantCreate) -> Any:
             detail="A tenant with this code already exists.",
         )
     
-    tenant = Tenant.model_validate(tenant_in)
-    session.add(tenant)
-    session.commit()
-    session.refresh(tenant)
+    tenant = crud.create_tenant(session=session, tenant_create=tenant_in, user_id=current_user.id)
     
     return TenantPublic.model_validate(tenant)
 
@@ -113,7 +109,7 @@ def read_tenant(
     """
     Get a specific tenant by id.
     """
-    tenant = session.get(Tenant, tenant_id)
+    tenant = crud.get_tenant_by_id(session=session, tenant_id=tenant_id)
     if not tenant:
         raise HTTPException(
             status_code=404,
@@ -133,11 +129,13 @@ def update_tenant(
     session: SessionDep,
     tenant_id: uuid.UUID,
     tenant_in: TenantUpdate,
+    request: Request,
+    current_user: CurrentUser,
 ) -> Any:
     """
     Update a tenant.
     """
-    tenant = session.get(Tenant, tenant_id)
+    tenant = crud.get_tenant_by_id(session=session, tenant_id=tenant_id)
     if not tenant:
         raise HTTPException(
             status_code=404,
@@ -146,24 +144,14 @@ def update_tenant(
     
     # Check if code is being updated and if it conflicts with existing tenant
     if tenant_in.code and tenant_in.code != tenant.code:
-        existing_tenant = session.exec(
-            select(Tenant).where(col(Tenant.code) == tenant_in.code)
-        ).first()
+        existing_tenant = crud.get_tenant_by_code(session=session, code=tenant_in.code)
         if existing_tenant:
             raise HTTPException(
                 status_code=400,
                 detail="A tenant with this code already exists.",
             )
     
-    # Update tenant data
-    update_data = tenant_in.model_dump(exclude_unset=True)
-    if update_data:
-        from datetime import datetime, timezone
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        tenant.sqlmodel_update(update_data)
-        session.add(tenant)
-        session.commit()
-        session.refresh(tenant)
+    tenant = crud.update_tenant(session=session, db_tenant=tenant, tenant_in=tenant_in, user_id=current_user.id)
     
     return TenantPublic.model_validate(tenant)
 
@@ -177,18 +165,19 @@ def delete_tenant(
     *,
     session: SessionDep,
     tenant_id: uuid.UUID,
+    request: Request,
+    current_user: CurrentUser,
 ) -> Any:
     """
     Delete a tenant.
     """
-    tenant = session.get(Tenant, tenant_id)
+    tenant = crud.get_tenant_by_id(session=session, tenant_id=tenant_id)
     if not tenant:
         raise HTTPException(
             status_code=404,
             detail="Tenant not found",
         )
     
-    session.delete(tenant)
-    session.commit()
+    crud.delete_tenant(session=session, db_tenant=tenant, user_id=current_user.id)
     
     return Message(message="Tenant deleted successfully") 
