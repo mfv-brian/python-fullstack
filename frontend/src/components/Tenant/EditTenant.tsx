@@ -15,6 +15,8 @@ import { type TenantPublic, type TenantUpdate, TenantsService } from "../../clie
 import type { ApiError } from "../../client/core/ApiError"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
+import { useAuditLogger, createTenantAuditLog } from "../../utils/auditLog"
+import useAuth from "../../hooks/useAuth"
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -35,6 +37,8 @@ interface EditTenantProps {
 const EditTenant = ({ tenant, isOpen, onClose }: EditTenantProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   const {
     register,
     handleSubmit,
@@ -59,8 +63,36 @@ const EditTenant = ({ tenant, isOpen, onClose }: EditTenantProps) => {
   const mutation = useMutation({
     mutationFn: (data: TenantUpdate) =>
       TenantsService.updateTenant({ tenantId: tenant.id, requestBody: data }),
-    onSuccess: () => {
+    onSuccess: async (updatedTenant) => {
       showSuccessToast("Tenant updated successfully.")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createTenantAuditLog(
+          "UPDATE",
+          tenant.id,
+          currentUser.id,
+          {
+            name: tenant.name,
+            code: tenant.code,
+            description: tenant.description,
+            status: tenant.status,
+            max_users: tenant.max_users,
+            max_storage_gb: tenant.max_storage_gb,
+          },
+          {
+            name: updatedTenant.name,
+            code: updatedTenant.code,
+            description: updatedTenant.description,
+            status: updatedTenant.status,
+            max_users: updatedTenant.max_users,
+            max_storage_gb: updatedTenant.max_storage_gb,
+          },
+          "INFO"
+        )
+        await logAction(auditData)
+      }
+      
       onClose()
     },
     onError: (err: ApiError) => {

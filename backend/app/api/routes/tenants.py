@@ -23,21 +23,25 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=TenantsPublic,
 )
 def read_tenants(
     session: SessionDep,
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     search: str | None = Query(None, description="Search by name or code"),
     status: str | None = Query(None, description="Filter by status (active/inactive)"),
 ) -> Any:
     """
-    Retrieve tenants with optional search and filtering.
+    Retrieve tenants with optional search and filtering (authenticated users).
     """
     # Build the base query
     statement = select(Tenant)
+    
+    # For non-superusers, only show their own tenant
+    if not current_user.is_superuser:
+        statement = statement.where(col(Tenant.id) == current_user.tenant_id)
     
     # Add search filter if provided
     if search:
@@ -53,6 +57,8 @@ def read_tenants(
     
     # Get count
     count_statement = select(func.count()).select_from(Tenant)
+    if not current_user.is_superuser:
+        count_statement = count_statement.where(col(Tenant.id) == current_user.tenant_id)
     if search:
         count_statement = count_statement.where(search_filter)
     if status:

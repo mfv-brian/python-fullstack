@@ -18,6 +18,8 @@ import { type UserPublic, type UserUpdate, UsersService, TenantsService } from "
 import type { ApiError } from "@/client/core/ApiError"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
+import { useAuditLogger, createUserAuditLog } from "@/utils/auditLog"
+import useAuth from "@/hooks/useAuth"
 import { Checkbox } from "../ui/checkbox"
 import {
   DialogBody,
@@ -42,6 +44,8 @@ const EditUser = ({ user }: EditUserProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   
   // Fetch tenants for the dropdown
   const { data: tenantsData } = useQuery({
@@ -65,8 +69,35 @@ const EditUser = ({ user }: EditUserProps) => {
   const mutation = useMutation({
     mutationFn: (data: UserUpdateForm) =>
       UsersService.updateUser({ userId: user.id, requestBody: data }),
-    onSuccess: () => {
+    onSuccess: async (updatedUser) => {
       showSuccessToast("User updated successfully.")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createUserAuditLog(
+          "UPDATE",
+          user.id,
+          user.tenant_id,
+          currentUser.id,
+          {
+            email: user.email,
+            full_name: user.full_name,
+            role: user.role,
+            is_active: user.is_active,
+            tenant_id: user.tenant_id,
+          },
+          {
+            email: updatedUser.email,
+            full_name: updatedUser.full_name,
+            role: updatedUser.role,
+            is_active: updatedUser.is_active,
+            tenant_id: updatedUser.tenant_id,
+          },
+          "INFO"
+        )
+        await logAction(auditData)
+      }
+      
       reset()
       setIsOpen(false)
     },

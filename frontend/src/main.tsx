@@ -18,9 +18,22 @@ OpenAPI.TOKEN = async () => {
 }
 
 const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && [401, 403].includes(error.status)) {
-    localStorage.removeItem("access_token")
-    window.location.href = "/login"
+  console.error("API Error:", error)
+  
+  if (error instanceof ApiError) {
+    console.error("API Error details:", {
+      status: error.status,
+      message: error.message,
+      url: error.url,
+      name: error.name,
+      body: error.body,
+    })
+    
+    if ([401, 403].includes(error.status)) {
+      console.error("Authentication error detected, logging out...")
+      localStorage.removeItem("access_token")
+      window.location.href = "/login"
+    }
   }
 }
 const queryClient = new QueryClient({

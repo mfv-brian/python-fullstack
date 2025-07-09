@@ -31,11 +31,11 @@ router = APIRouter(prefix="/audit-logs", tags=["audit-logs"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=AuditLogsPublic,
 )
 def read_audit_logs(
     session: SessionDep,
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     user_id: uuid.UUID | None = Query(None, description="Filter by user ID"),
@@ -48,10 +48,14 @@ def read_audit_logs(
     end_date: datetime | None = Query(None, description="End date for filtering"),
 ) -> Any:
     """
-    Retrieve audit logs with filtering options.
+    Retrieve audit logs with filtering options (authenticated users).
     """
     # Build the base query
     statement = select(AuditLog)
+    
+    # For non-superusers, only show logs from their own tenant
+    if not current_user.is_superuser:
+        statement = statement.where(col(AuditLog.tenant_id) == current_user.tenant_id)
     
     # Add filters
     if user_id:
@@ -65,6 +69,12 @@ def read_audit_logs(
     if severity:
         statement = statement.where(col(AuditLog.severity) == severity)
     if tenant_id:
+        # For non-superusers, ensure they can only filter by their own tenant
+        if not current_user.is_superuser and tenant_id != current_user.tenant_id:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only view audit logs from your own tenant",
+            )
         statement = statement.where(col(AuditLog.tenant_id) == tenant_id)
     if start_date:
         statement = statement.where(col(AuditLog.timestamp) >= start_date)
@@ -76,6 +86,8 @@ def read_audit_logs(
     
     # Get count
     count_statement = select(func.count()).select_from(AuditLog)
+    if not current_user.is_superuser:
+        count_statement = count_statement.where(col(AuditLog.tenant_id) == current_user.tenant_id)
     if user_id:
         count_statement = count_statement.where(col(AuditLog.user_id) == user_id)
     if action:
@@ -87,6 +99,11 @@ def read_audit_logs(
     if severity:
         count_statement = count_statement.where(col(AuditLog.severity) == severity)
     if tenant_id:
+        if not current_user.is_superuser and tenant_id != current_user.tenant_id:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only view audit logs from your own tenant",
+            )
         count_statement = count_statement.where(col(AuditLog.tenant_id) == tenant_id)
     if start_date:
         count_statement = count_statement.where(col(AuditLog.timestamp) >= start_date)
@@ -106,7 +123,6 @@ def read_audit_logs(
 
 @router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=AuditLogPublic,
 )
 def create_audit_log(
@@ -114,10 +130,25 @@ def create_audit_log(
     session: SessionDep,
     request: Request,
     audit_log_in: AuditLogCreate,
+    current_user: CurrentUser,
 ) -> Any:
     """
-    Create new audit log entry.
+    Create new audit log entry (authenticated users).
     """
+    # Ensure the user can only create audit logs for their own actions
+    if str(audit_log_in.user_id) != str(current_user.id):
+        raise HTTPException(
+            status_code=403,
+            detail="You can only create audit logs for your own actions",
+        )
+    
+    # Ensure the tenant_id matches the current user's tenant
+    if str(audit_log_in.tenant_id) != str(current_user.tenant_id):
+        raise HTTPException(
+            status_code=403,
+            detail="You can only create audit logs for your own tenant",
+        )
+    
     # Get client IP and user agent
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")

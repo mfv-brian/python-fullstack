@@ -67,7 +67,7 @@ class TenantUpdate(SQLModel):
     features_enabled: dict | None = None
 
 
-class Tenant(TenantBase, table=True):
+class Tenant(TenantBase, table=True):  # type: ignore
     __tablename__ = "tenant" # type: ignore
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -134,7 +134,7 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
 
 
-class User(UserBase, table=True):
+class User(UserBase, table=True):  # type: ignore
     __tablename__ = "user" # type: ignore
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -183,7 +183,7 @@ class ItemUpdate(ItemBase):
     description: str | None = Field(default=None, max_length=1000)
 
 
-class Item(ItemBase, table=True):
+class Item(ItemBase, table=True):  # type: ignore
     __tablename__ = "item" # type: ignore
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -240,7 +240,7 @@ class AuditLogUpdate(SQLModel):
     severity: AuditSeverity | None = None
 
 
-class AuditLog(AuditLogBase, table=True):
+class AuditLog(AuditLogBase, table=True):  # type: ignore
     __tablename__ = "audit_log" # type: ignore
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -299,7 +299,7 @@ class NewPassword(SQLModel):
 
 
 # Performance monitoring models
-class TenantMetrics(SQLModel, table=True):
+class TenantMetrics(SQLModel, table=True):  # type: ignore
     __tablename__ = "tenant_metrics" # type: ignore
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

@@ -34,25 +34,36 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
-    Retrieve users.
+    Retrieve users (authenticated users).
     """
-
+    # Build the base query
+    statement = select(User)
+    
+    # For non-superusers, only show users from their own tenant
+    if not current_user.is_superuser:
+        statement = statement.where(col(User.tenant_id) == current_user.tenant_id)
+    
+    # Get count
     count_statement = select(func.count()).select_from(User)
+    if not current_user.is_superuser:
+        count_statement = count_statement.where(col(User.tenant_id) == current_user.tenant_id)
+    
     count = session.exec(count_statement).one()
-
-    statement = select(User).offset(skip).limit(limit)
+    
+    # Get paginated results
+    statement = statement.offset(skip).limit(limit)
     users = session.exec(statement).all()
 
     return UsersPublic(data=[UserPublic.model_validate(user) for user in users], count=count)
 
 
 @router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+    "/", 
+    response_model=UserPublic,
 )
 def create_user(*, session: SessionDep, user_in: UserCreate, current_user: CurrentUser) -> Any:
     """
@@ -63,6 +74,13 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Curre
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
+        )
+
+    # Non-superusers can only create users in their own tenant
+    if not current_user.is_superuser and user_in.tenant_id and user_in.tenant_id != current_user.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to create users in other tenants",
         )
 
     # Set tenant_id from current user if not provided
@@ -201,7 +219,6 @@ def read_user_by_id(
 
 @router.patch(
     "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
 def update_user(
@@ -209,6 +226,7 @@ def update_user(
     session: SessionDep,
     user_id: uuid.UUID,
     user_in: UserUpdate,
+    current_user: CurrentUser,
 ) -> Any:
     """
     Update a user.
@@ -220,6 +238,14 @@ def update_user(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
+    
+    # Check permissions - only superusers can update users from other tenants
+    if not current_user.is_superuser and db_user.tenant_id != current_user.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to update users from other tenants",
+        )
+    
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
@@ -227,11 +253,18 @@ def update_user(
                 status_code=409, detail="User with this email already exists"
             )
 
+    # Non-superusers cannot change tenant_id
+    if not current_user.is_superuser and user_in.tenant_id and user_in.tenant_id != db_user.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to change a user's tenant",
+        )
+
     db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
     return db_user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_id}")
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
@@ -241,10 +274,19 @@ def delete_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check permissions - only superusers can delete users from other tenants
+    if not current_user.is_superuser and user.tenant_id != current_user.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to delete users from other tenants",
+        )
+    
     if user == current_user:
         raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
+            status_code=403, detail="Users are not allowed to delete themselves through this endpoint"
         )
+    
     statement = delete(Item).where(col(Item.owner_id) == user_id)
     session.exec(statement)  # type: ignore
     session.delete(user)

@@ -5,6 +5,8 @@ import { type UserCreate, UsersService, TenantsService } from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
+import { useAuditLogger, createUserAuditLog } from "@/utils/auditLog"
+import useAuth from "@/hooks/useAuth"
 import {
   Button,
   DialogActionTrigger,
@@ -37,6 +39,8 @@ const AddUser = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
+  const { user: currentUser } = useAuth()
+  const { logAction } = useAuditLogger()
   
   // Fetch tenants for the dropdown
   const { data: tenantsData } = useQuery({
@@ -68,8 +72,29 @@ const AddUser = () => {
   const mutation = useMutation({
     mutationFn: (data: UserCreate) =>
       UsersService.createUser({ requestBody: data }),
-    onSuccess: () => {
+    onSuccess: async (createdUser) => {
       showSuccessToast("User created successfully.")
+      
+      // Create audit log entry
+      if (currentUser) {
+        const auditData = createUserAuditLog(
+          "CREATE",
+          createdUser.id,
+          createdUser.tenant_id,
+          currentUser.id,
+          undefined, // No before state for creation
+          {
+            email: createdUser.email,
+            full_name: createdUser.full_name,
+            role: createdUser.role,
+            is_active: createdUser.is_active,
+            tenant_id: createdUser.tenant_id,
+          },
+          "INFO"
+        )
+        await logAction(auditData)
+      }
+      
       reset()
       setIsOpen(false)
     },
