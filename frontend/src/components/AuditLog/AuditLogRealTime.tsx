@@ -29,53 +29,85 @@ const AuditLogRealTime = () => {
   const [isPaused, setIsPaused] = useState(false)
   const [logs, setLogs] = useState<ExtendedAuditLog[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   const logsEndRef = useRef<HTMLDivElement>(null)
-  const intervalRef = useRef<number | null>(null)
+  const websocketRef = useRef<WebSocket | null>(null)
 
-  // Mock WebSocket connection
+  // WebSocket connection
   const connect = () => {
-    setIsConnected(true)
-    
-    // Simulate receiving real-time logs
-    intervalRef.current = window.setInterval(() => {
-      if (!isPaused) {
-        const mockLog: ExtendedAuditLog = {
-          id: Date.now().toString(),
-          user_id: `user${Math.floor(Math.random() * 100)}`,
-          user_email: `user${Math.floor(Math.random() * 100)}@example.com`,
-          user_name: `User ${Math.floor(Math.random() * 100)}`,
-          action: ["CREATE", "UPDATE", "DELETE", "VIEW", "LOGIN"][Math.floor(Math.random() * 5)] as any,
-          resource_type: ["user", "item", "order", "product"][Math.floor(Math.random() * 4)],
-          resource_id: `resource${Math.floor(Math.random() * 1000)}`,
-          timestamp: new Date().toISOString(),
-          ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
-          severity: ["INFO", "WARNING", "ERROR", "CRITICAL"][Math.floor(Math.random() * 4)] as any,
-          message: [
-            "User logged in successfully",
-            "Item created",
-            "Order updated",
-            "Product deleted",
-            "Configuration changed",
-            "Access granted",
-            "System error occurred",
-            "Critical failure detected"
-          ][Math.floor(Math.random() * 8)],
-          tenant_id: `tenant${Math.floor(Math.random() * 3) + 1}`,
-        }
+    try {
+      // Get the base URL from the current window location
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = window.location.host
+      const wsUrl = `${protocol}//${host}/api/v1/audit-logs/ws`
+      
+      const ws = new WebSocket(wsUrl)
+      websocketRef.current = ws
 
-        setLogs(prevLogs => {
-          const newLogs = [mockLog, ...prevLogs].slice(0, 100) // Keep only last 100 logs
-          return newLogs
-        })
+      ws.onopen = () => {
+        setIsConnected(true)
+        setConnectionError(null)
+        console.log('WebSocket connected')
       }
-    }, 2000 + Math.random() * 3000) // Random interval between 2-5 seconds
+
+      ws.onmessage = (event) => {
+        if (!isPaused) {
+          try {
+            const data = JSON.parse(event.data)
+            
+            // Handle different message types
+            if (data.type === 'audit_log') {
+              const log: ExtendedAuditLog = {
+                ...data.log,
+                user_name: `User ${data.log.user_id?.slice(0, 8) || 'Unknown'}`,
+                user_email: `user-${data.log.user_id?.slice(0, 8) || 'unknown'}@example.com`,
+                message: `${data.log.action} operation on ${data.log.resource_type} ${data.log.resource_id}`,
+                severity: data.log.severity || "INFO",
+                action: data.log.action,
+                timestamp: data.log.timestamp || new Date().toISOString(),
+              }
+
+              setLogs(prevLogs => {
+                const newLogs = [log, ...prevLogs].slice(0, 100) // Keep only last 100 logs
+                return newLogs
+              })
+            } else if (data.type === 'ping') {
+              // Respond to ping with pong
+              ws.send(JSON.stringify({ type: 'pong' }))
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error)
+          }
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setConnectionError('Connection error occurred')
+        setIsConnected(false)
+      }
+
+      ws.onclose = (event) => {
+        console.log('WebSocket disconnected:', event.code, event.reason)
+        setIsConnected(false)
+        if (event.code !== 1000) { // Not a normal closure
+          setConnectionError('Connection lost. Click Connect to retry.')
+        }
+      }
+
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error)
+      setConnectionError('Failed to establish connection')
+    }
   }
 
   const disconnect = () => {
-    setIsConnected(false)
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current)
+    if (websocketRef.current) {
+      websocketRef.current.close(1000, 'User disconnected')
+      websocketRef.current = null
     }
+    setIsConnected(false)
+    setConnectionError(null)
   }
 
   const togglePause = () => {
@@ -130,8 +162,8 @@ const AuditLogRealTime = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current)
+      if (websocketRef.current) {
+        websocketRef.current.close()
       }
     }
   }, [])
@@ -197,6 +229,15 @@ const AuditLogRealTime = () => {
             )}
           </HStack>
         </Flex>
+
+        {/* Error Message */}
+        {connectionError && (
+          <Box mt={2} p={2} bg="red.50" borderRadius="md">
+            <Text fontSize="sm" color="red.600">
+              {connectionError}
+            </Text>
+          </Box>
+        )}
 
         {/* Stats */}
         {isConnected && (
@@ -276,7 +317,7 @@ const AuditLogRealTime = () => {
                         •
                       </Text>
                       <Text fontSize="xs" color="gray.600">
-                        IP: {log.ip_address}
+                        IP: {log.ip_address || "N/A"}
                       </Text>
                       {log.tenant_id && (
                         <>

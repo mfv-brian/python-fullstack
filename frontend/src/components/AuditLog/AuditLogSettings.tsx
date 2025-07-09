@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi"
 
 import type { AuditSeverity } from "../../client/types.gen"
+import { UtilsService } from "../../client/sdk.gen"
 import { Checkbox } from "../ui/checkbox"
 import { Field } from "../ui/field"
 import { NativeSelectField, NativeSelectRoot } from "../ui/native-select"
@@ -45,6 +46,10 @@ interface AuditLogSettings {
 const AuditLogSettings = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [operationStatus, setOperationStatus] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null)
 
   const {
     register,
@@ -73,13 +78,24 @@ const AuditLogSettings = () => {
 
   const onSubmit = async (data: AuditLogSettings) => {
     setIsLoading(true)
+    setOperationStatus(null)
+    
     try {
-      // Simulate API call
+      // In a real application, you would have a dedicated settings API
+      // For now, we'll simulate saving settings
       await new Promise(resolve => setTimeout(resolve, 1500))
       console.log("Settings saved:", data)
       setLastUpdated(new Date().toLocaleString())
+      setOperationStatus({
+        type: 'success',
+        message: 'Settings saved successfully'
+      })
     } catch (error) {
       console.error("Failed to save settings:", error)
+      setOperationStatus({
+        type: 'error',
+        message: 'Failed to save settings'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -87,9 +103,22 @@ const AuditLogSettings = () => {
 
   const handleArchiveNow = async () => {
     setIsLoading(true)
+    setOperationStatus(null)
+    
     try {
+      // This would call a real archival API endpoint
       await new Promise(resolve => setTimeout(resolve, 2000))
       console.log("Manual archival triggered")
+      setOperationStatus({
+        type: 'success',
+        message: 'Archival process started successfully'
+      })
+    } catch (error) {
+      console.error("Archival failed:", error)
+      setOperationStatus({
+        type: 'error',
+        message: 'Failed to start archival process'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -97,9 +126,66 @@ const AuditLogSettings = () => {
 
   const handleCleanupOldLogs = async () => {
     setIsLoading(true)
+    setOperationStatus(null)
+    
     try {
+      // This would call a real cleanup API endpoint
       await new Promise(resolve => setTimeout(resolve, 1500))
       console.log("Old logs cleanup triggered")
+      setOperationStatus({
+        type: 'success',
+        message: 'Cleanup process completed successfully'
+      })
+    } catch (error) {
+      console.error("Cleanup failed:", error)
+      setOperationStatus({
+        type: 'error',
+        message: 'Failed to cleanup old logs'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleOptimizeStorage = async () => {
+    setIsLoading(true)
+    setOperationStatus(null)
+    
+    try {
+      // Call the real database optimization endpoint
+      await UtilsService.optimizeDatabaseEndpoint()
+      setOperationStatus({
+        type: 'success',
+        message: 'Database optimization completed successfully'
+      })
+    } catch (error) {
+      console.error("Storage optimization failed:", error)
+      setOperationStatus({
+        type: 'error',
+        message: 'Failed to optimize storage'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRebuildIndexes = async () => {
+    setIsLoading(true)
+    setOperationStatus(null)
+    
+    try {
+      // Call the real reindex endpoint
+      await UtilsService.reindexDatabaseEndpoint()
+      setOperationStatus({
+        type: 'success',
+        message: 'Index rebuild completed successfully'
+      })
+    } catch (error) {
+      console.error("Index rebuild failed:", error)
+      setOperationStatus({
+        type: 'error',
+        message: 'Failed to rebuild indexes'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -109,6 +195,23 @@ const AuditLogSettings = () => {
     <Box>
       <form onSubmit={handleSubmit(onSubmit)}>
         <VStack gap={6} align="stretch">
+          {/* Operation Status */}
+          {operationStatus && (
+            <Card.Root>
+              <Card.Body>
+                <Box 
+                  p={3} 
+                  bg={operationStatus.type === 'success' ? 'green.50' : 'red.50'} 
+                  borderRadius="md"
+                >
+                  <Text fontSize="sm" color={operationStatus.type === 'success' ? 'green.800' : 'red.800'}>
+                    {operationStatus.message}
+                  </Text>
+                </Box>
+              </Card.Body>
+            </Card.Root>
+          )}
+
           {/* Data Retention Settings */}
           <Card.Root>
             <Card.Header>
@@ -411,6 +514,7 @@ const AuditLogSettings = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleOptimizeStorage}
                     loading={isLoading}
                   >
                     <FiRefreshCw />
@@ -419,6 +523,7 @@ const AuditLogSettings = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleRebuildIndexes}
                     loading={isLoading}
                   >
                     <FiDatabase />

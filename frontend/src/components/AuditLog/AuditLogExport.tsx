@@ -9,6 +9,7 @@ import { useState } from "react"
 import { FiDownload, FiFile, FiFileText } from "react-icons/fi"
 
 import type { AuditAction, AuditSeverity } from "../../client/types.gen"
+import { useAuditLogExport } from "../../hooks/useAuditLogs"
 import {
   DialogActionTrigger,
   DialogBody,
@@ -26,6 +27,7 @@ interface AuditLogFilters {
   action?: AuditAction;
   severity?: AuditSeverity;
   resource_type?: string;
+  resource_id?: string;
   start_date?: string;
   end_date?: string;
   user_id?: string;
@@ -40,74 +42,15 @@ interface AuditLogExportProps {
 
 const AuditLogExport = ({ isOpen, onClose, filters }: AuditLogExportProps) => {
   const [selectedFormat, setSelectedFormat] = useState<"JSON" | "CSV">("JSON")
-  const [isExporting, setIsExporting] = useState(false)
+  const exportMutation = useAuditLogExport()
 
   const handleExport = async () => {
-    setIsExporting(true)
-    
     try {
-      // Simulate export API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Create mock data based on format
-      const mockData = [
-        {
-          id: "1",
-          timestamp: "2024-01-15T10:30:00Z",
-          user_email: "admin@example.com",
-          action: "CREATE",
-          resource_type: "user",
-          severity: "INFO",
-          message: "Created new user account",
-        },
-        {
-          id: "2",
-          timestamp: "2024-01-15T09:15:00Z",
-          user_email: "user@example.com",
-          action: "UPDATE",
-          resource_type: "item",
-          severity: "WARNING",
-          message: "Updated item configuration",
-        },
-      ]
-
-      let content: string
-      let mimeType: string
-      let filename: string
-
-      if (selectedFormat === "JSON") {
-        content = JSON.stringify(mockData, null, 2)
-        mimeType = "application/json"
-        filename = `audit-logs-${new Date().toISOString().split('T')[0]}.json`
-      } else {
-        // CSV format
-        const headers = Object.keys(mockData[0]).join(",")
-        const rows = mockData.map(item => 
-          Object.values(item).map(value => 
-            typeof value === "string" && value.includes(",") ? `"${value}"` : value
-          ).join(",")
-        )
-        content = [headers, ...rows].join("\n")
-        mimeType = "text/csv"
-        filename = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
-      }
-
-      // Create and download file
-      const blob = new Blob([content], { type: mimeType })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
+      await exportMutation.mutateAsync({ format: selectedFormat, filters })
       onClose()
     } catch (error) {
       console.error("Export failed:", error)
-    } finally {
-      setIsExporting(false)
+      // You might want to show a toast notification here
     }
   }
 
@@ -222,7 +165,7 @@ const AuditLogExport = ({ isOpen, onClose, filters }: AuditLogExportProps) => {
             <Button
               variant="subtle"
               colorPalette="gray"
-              disabled={isExporting}
+              disabled={exportMutation.isPending}
             >
               Cancel
             </Button>
@@ -230,10 +173,10 @@ const AuditLogExport = ({ isOpen, onClose, filters }: AuditLogExportProps) => {
           <Button
             variant="solid"
             onClick={handleExport}
-            loading={isExporting}
+            loading={exportMutation.isPending}
           >
             <FiDownload />
-            {isExporting ? "Exporting..." : "Export"}
+            {exportMutation.isPending ? "Exporting..." : "Export"}
           </Button>
         </DialogFooter>
         <DialogCloseTrigger />

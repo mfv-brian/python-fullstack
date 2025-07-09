@@ -10,11 +10,11 @@ import {
   Tooltip,
   VStack,
 } from "@chakra-ui/react"
-import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { FiDownload, FiEye, FiSearch } from "react-icons/fi"
 
-import type { AuditLogPublic, AuditAction, AuditSeverity } from "../../client/types.gen"
+import type { AuditAction, AuditSeverity } from "../../client/types.gen"
+import { useAuditLogs } from "../../hooks/useAuditLogs"
 import {
   PaginationItems,
   PaginationNextTrigger,
@@ -26,22 +26,13 @@ import AuditLogDetails from "./AuditLogDetails"
 import AuditLogExport from "./AuditLogExport"
 import AuditLogFilters from "./AuditLogFilters"
 
-// Define an extended type with the additional fields needed for this component
-interface ExtendedAuditLog extends AuditLogPublic {
-  user_name?: string;
-  user_email?: string;
-  message?: string;
-  severity: AuditSeverity;
-  action: AuditAction;
-  timestamp: string; // Make timestamp required
-}
-
 // Define the filters type
 interface AuditLogFilterOptions {
   search?: string;
   action?: AuditAction;
   severity?: AuditSeverity;
   resource_type?: string;
+  resource_id?: string;
   start_date?: string;
   end_date?: string;
   user_id?: string;
@@ -49,66 +40,6 @@ interface AuditLogFilterOptions {
 }
 
 const PER_PAGE = 10
-
-// Mock data for demo - replace with actual API call
-const mockAuditLogs = {
-  data: [
-    {
-      id: "1",
-      user_id: "user123",
-      user_email: "admin@example.com",
-      user_name: "Admin User",
-      action: "CREATE",
-      resource_type: "user",
-      resource_id: "user456",
-      timestamp: "2024-01-15T10:30:00Z",
-      ip_address: "192.168.1.100",
-      severity: "INFO",
-      message: "Created new user account",
-      tenant_id: "tenant1",
-    },
-    {
-      id: "2",
-      user_id: "user789",
-      user_email: "user@example.com",
-      user_name: "John Doe",
-      action: "UPDATE",
-      resource_type: "item",
-      resource_id: "item123",
-      timestamp: "2024-01-15T09:15:00Z",
-      ip_address: "192.168.1.101",
-      severity: "WARNING",
-      message: "Updated item configuration",
-      tenant_id: "tenant1",
-    },
-    {
-      id: "3",
-      user_id: "user456",
-      user_email: "manager@example.com",
-      user_name: "Manager User",
-      action: "DELETE",
-      resource_type: "order",
-      resource_id: "order789",
-      timestamp: "2024-01-15T08:45:00Z",
-      ip_address: "192.168.1.102",
-      severity: "ERROR",
-      message: "Deleted order permanently",
-      tenant_id: "tenant2",
-    },
-  ],
-  count: 3,
-} as { data: ExtendedAuditLog[]; count: number }
-
-function getAuditLogsQueryOptions({ page, filters }: { page: number; filters?: AuditLogFilterOptions }) {
-  return {
-    queryFn: async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      return mockAuditLogs
-    },
-    queryKey: ["auditLogs", { page, filters }],
-  }
-}
 
 const getSeverityColor = (severity: string) => {
   switch (severity) {
@@ -132,13 +63,10 @@ const formatTimestamp = (timestamp: string) => {
 function AuditLogTable() {
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<AuditLogFilterOptions>({})
-  const [selectedLog, setSelectedLog] = useState<ExtendedAuditLog | null>(null)
+  const [selectedLog, setSelectedLog] = useState<any>(null)
   const [showExport, setShowExport] = useState(false)
 
-  const { data, isLoading, isPlaceholderData } = useQuery({
-    ...getAuditLogsQueryOptions({ page, filters }),
-    placeholderData: (prevData) => prevData,
-  })
+  const { data, isLoading, isPlaceholderData, error } = useAuditLogs(page, filters)
 
   const logs = data?.data.slice(0, PER_PAGE) ?? []
   const count = data?.count ?? 0
@@ -151,6 +79,31 @@ function AuditLogTable() {
   const handleFiltersReset = () => {
     setFilters({})
     setPage(1)
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <AuditLogFilters
+          onFiltersChange={handleFiltersChange}
+          onReset={handleFiltersReset}
+          loading={isLoading}
+        />
+        <EmptyState.Root>
+          <EmptyState.Content>
+            <EmptyState.Indicator>
+              <FiSearch />
+            </EmptyState.Indicator>
+            <VStack textAlign="center">
+              <EmptyState.Title>Error loading audit logs</EmptyState.Title>
+              <EmptyState.Description>
+                {error instanceof Error ? error.message : "An error occurred while loading audit logs"}
+              </EmptyState.Description>
+            </VStack>
+          </EmptyState.Content>
+        </EmptyState.Root>
+      </Box>
+    )
   }
 
   if (isLoading && !data) {
